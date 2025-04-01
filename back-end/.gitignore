@@ -1,0 +1,7 @@
+node_modules
+
+# File di sistema
+.DS_Store
+
+# File di variabili d'ambiente
+.env

@@ -6,6 +6,7 @@ import Navbar from 'react-bootstrap/Navbar';
 import NavDropdown from 'react-bootstrap/NavDropdown';
 import Login from '../modal/Login.js';
 import { useAuth } from '../context/AuthContext';
+import Administrator from '../pages/Administrator.js';
 
 
 
@@ -38,9 +39,7 @@ const { logout } = useAuth();
                 Something else here
               </NavDropdown.Item>
             </NavDropdown>
-            <Nav.Link href="#" disabled>
-              Link
-            </Nav.Link>
+            <Nav.Link href="/Administrator">Link</Nav.Link>
           </Nav>
           <Form className="d-flex">
             <Form.Control

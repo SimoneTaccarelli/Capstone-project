@@ -5,6 +5,7 @@ import { Form } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_URL } from '../config/config';
 
 function Login() {
   const { login, loginWithGoogle } = useAuth();
@@ -59,7 +60,7 @@ function Login() {
 
   const sendTokenToBackend = async (token) => {
     try {
-      const response = await axios.post('http://localhost:4000/api/v1/auth/login-google', { token });
+      const response = await axios.post(`${API_URL}/auth/login-google`, { token });
       console.log('Risposta dal backend:', response.data);
     } catch (error) {
       console.error('Errore nell\'invio del token al backend:', error);

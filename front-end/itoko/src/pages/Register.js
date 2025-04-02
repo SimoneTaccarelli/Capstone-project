@@ -2,6 +2,8 @@ import {Card, Form, Button} from 'react-bootstrap';
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+import { API_URL } from '../config/config';
 
 
 const Register = () => {
@@ -11,7 +13,7 @@ const Register = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
-    //const {signup} = useAuth();
+
     
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -24,11 +26,22 @@ const Register = () => {
         try {
             await signup(email, password);
             console.log('User registered successfully:', email , password);
+            await addUser(email, password); // Call the function to add user to the database
             navigate('/'); // Redirect to home page after successful registration
         } catch (error) {
             setError('Failed to create an account. Please try again.');
         }
     }
+
+    const addUser = async (email, password) => {
+        try {
+            const response = await axios.post(`${API_URL}/auth/register`, { email, password });
+            console.log('User added successfully:', response.data);
+        } catch (error) {
+            console.error('Error adding user:', error);
+        }
+    }
+
 
     return (
         <div className="d-flex justify-content-center align-items-center vh-100">

@@ -4,7 +4,10 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import open from 'open';
 import admin from 'firebase-admin';
-import gobalRouter from './routes/auth.js';
+import authRouter from './routes/auth.js';
+import fileRouter from './routes/file.js';
+import productRouter from './routes/product.js';
+
 
 
 
@@ -16,13 +19,14 @@ dotenv.config();
 const server = express();
 server.use(express.json());
 server.use(cors())
-server.use('/api/v1' , gobalRouter)
+server.use('/api/v1' , authRouter)
+server.use('/api/v1' , fileRouter)
+server.use('/api/v1' , productRouter)
 
 
 admin.initializeApp({
   credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_CREDENTIALS))
 });
-
 
 
 
@@ -38,6 +42,8 @@ mongoose.connection.on('connected', () => {
 mongoose.connection.on('error', (err) => {
   console.log('Failed to connect to MongoDB', err);
 });
+
+
 
 const router = express.Router();
 

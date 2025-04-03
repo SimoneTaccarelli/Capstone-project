@@ -18,11 +18,10 @@ const productSchema = new mongoose.Schema({
         required: true,
     },
     category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Category",
+        type: String,
         required: true,
     },
     });
 
-const Product = mongoose.model("Product", shirtSchema);
+const Product = mongoose.model("Product", productSchema);
 export default Product;

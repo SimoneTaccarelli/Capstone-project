@@ -1,4 +1,3 @@
-import Administrator from '../../front-end/itoko/src/pages/Administrator.js';
 import User from '../models/Users.js';
 import admin from 'firebase-admin';
 

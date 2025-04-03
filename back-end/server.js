@@ -50,7 +50,8 @@ const router = express.Router();
 
 
 //listen to server
-server.listen(`${process.env.PORT}`, async() => {
-  console.log(`${process.env.API_URL_BACK_END}`);
-  await open (`${process.env.API_URL_BACK_END}`);
+server.listen(`${process.env.PORT}`, () => {
+  console.log(`Server running on ${process.env.API_URL_BACK_END}`);
+  // Rimuovi o commenta questa riga per test
+  // await open (`${process.env.API_URL_BACK_END}`);
 });

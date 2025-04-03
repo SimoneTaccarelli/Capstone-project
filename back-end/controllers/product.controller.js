@@ -1,8 +1,33 @@
-import Product from '../models/product.model.js';
+import Product from '../models/Products.js';
 
 export async function getAllProducts(request, response,next) {
     try {
-        const products = await Product.find().populate('categoryId', 'name');
+        const products = await Product.find().populate('category', 'name');
+        if (!products || products.length === 0) {
+            return response.status(404).json({ error: 'No products found' });
+        }
+        // Filter products based on query parameters
+        const { category } = request.query;
+        if (category) {
+            products = products.filter(product => product.category.toLowerCase().includes(category.toLowerCase()));
+        }
+     
+        // Pagination logic
+        const { page = 1, limit = 10 } = request.query;
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+        const totalProducts = products.length;
+        const totalPages = Math.ceil(totalProducts / limit);
+        const paginatedProducts = products.slice(startIndex, endIndex);
+        const pagination = {
+            totalProducts,
+            totalPages,
+            currentPage: parseInt(page),
+            productsPerPage: parseInt(limit),
+        };
+        response.set('X-Pagination', JSON.stringify(pagination));
+
+       
         response.status(200).json(products);
     } catch (error) {
         response.status(500).json({ error: error.message });

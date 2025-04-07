@@ -8,6 +8,9 @@ import {
   GoogleAuthProvider
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
 
 // Crea il contesto per l'autenticazione
 const AuthContext = createContext();
@@ -25,14 +28,49 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Funzione per il login
-  const login = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
+  const login = async (email, password) => {
+    try {
+      // Esegui il login normale
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Ottieni il token dell'utente
+      const token = await userCredential.user.getIdToken();
+      
+      // Stampa il token per poterlo usare in Postman
+      console.log('Token per Postman:', token);
+      
+      return userCredential;
+    } catch (error) {
+      console.error("Errore durante il login:", error);
+      throw error;
+    }
   };
 
   // Funzione per il login con Google
   const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    return signInWithPopup(auth, provider);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      
+      // Ottieni il token
+      const token = await result.user.getIdToken();
+      console.log('Token Google per Postman:', token);
+      
+      // Invia il token al backend per sincronizzare con MongoDB
+      try {
+        const backendResponse = await axios.post(`${API_URL}/auth/login-google`, { token });
+        console.log('Utente sincronizzato con MongoDB:', backendResponse.data);
+        // Qui potresti arricchire currentUser con i dati dal backend
+      } catch (backendError) {
+        console.error("Errore sincronizzazione con MongoDB:", backendError);
+        // Gestisci l'errore ma non interrompere il flusso di autenticazione
+      }
+      
+      return result;
+    } catch (error) {
+      console.error("Errore durante il login con Google:", error);
+      throw error;
+    }
   };
 
   // Funzione per il logout

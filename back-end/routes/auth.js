@@ -5,12 +5,11 @@ const router = Router()
 
 
 router.post("/auth/register",userController.freshRegister);
-router.post("/auth/login", userController.verifyToken, userController.login);
+router.post("/auth/login", userController.login );
 router.post("/auth/login-google", userController.loginGoogle);
-router.get("/auth/user", userController.readUser);
-router.put("/auth/user",userController.verifyToken ,  userController.updateUser);
-router.delete("/auth/user", userController.verifyToken, userController.deleteUser);
-router.post("/auth/logout", userController.logout);
+router.put("/auth/modifyUser",userController.verifyToken ,  userController.updateUser);
+router.delete("/auth/cancelUser", userController.verifyToken, userController.eliminateUser);
+
 
 
 export default router;

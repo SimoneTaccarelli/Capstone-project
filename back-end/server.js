@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import open from 'open';
 import admin from 'firebase-admin';
 import authRouter from './routes/auth.js';
 import fileRouter from './routes/file.js';
@@ -52,6 +51,4 @@ const router = express.Router();
 //listen to server
 server.listen(`${process.env.PORT}`, () => {
   console.log(`Server running on ${process.env.API_URL_BACK_END}`);
-  // Rimuovi o commenta questa riga per test
-  // await open (`${process.env.API_URL_BACK_END}`);
 });

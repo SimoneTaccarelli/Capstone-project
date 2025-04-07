@@ -1,0 +1,12 @@
+@baseUrl= http://localhost:4000/api/v1
+
+###
+POST  {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "simone-taccarelli@hotmail.it",
+  "password":"daicazzo"
+  "returnSecureToken": true
+}
+

@@ -10,6 +10,8 @@ const Register = () => {
     const {signup} = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -24,18 +26,28 @@ const Register = () => {
         }
 
         try {
-            await signup(email, password);
-            console.log('User registered successfully:', email , password);
-            await addUser(email, password); // Call the function to add user to the database
-            navigate('/'); // Redirect to home page after successful registration
+            // Modifica la tua funzione signup per restituire l'utente creato
+            const userCredential = await signup(email, password);
+            const firebaseUid = userCredential.user.uid;
+            
+            // Ora usa questo UID
+            await addUser(email, firstName, lastName, firebaseUid);
         } catch (error) {
+            console.error("Registration error:", error);
             setError('Failed to create an account. Please try again.');
         }
     }
 
-    const addUser = async (email, password) => {
+    // Modifica addUser per accettare e inviare l'UID
+    const addUser = async (email, firstName, lastName, firebaseUid) => {
         try {
-            const response = await axios.post(`${API_URL}/auth/register`, { email, password });
+            const response = await axios.post(`${API_URL}/auth/register`, { 
+                email, 
+                firstName, 
+                lastName, 
+                firebaseUid // Aggiunto il Firebase UID
+            });
+            navigate('/');
             console.log('User added successfully:', response.data);
         } catch (error) {
             console.error('Error adding user:', error);
@@ -50,6 +62,14 @@ const Register = () => {
                     <h2 className="text-center mb-4">Register</h2>
                     {error && <p className="text-danger">{error}</p>}
                     <Form onSubmit={handleSubmit}>
+                        <Form.Group id="first-name" className="mb-3">
+                            <Form.Label>First Name</Form.Label>
+                            <Form.Control type="text" required onChange={(e) => setFirstName(e.target.value)} />
+                        </Form.Group>
+                        <Form.Group id="last-name" className="mb-3">
+                            <Form.Label>Last Name</Form.Label>
+                            <Form.Control type="text" required onChange={(e) => setLastName(e.target.value)} />
+                        </Form.Group>
                         <Form.Group id="email" className="mb-3">
                             <Form.Label>Email</Form.Label>
                             <Form.Control type="email" required onChange={(e) => setEmail(e.target.value)} />

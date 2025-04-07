@@ -13,10 +13,10 @@ const productSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    imageUrl: {
-        type: String,
-        required: true,
-    },
+    imageUrl: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'File',
+    }],
     category: {
         type: String,
         required: true,

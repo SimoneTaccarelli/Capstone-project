@@ -1,6 +1,6 @@
 import Product from '../models/Products.js';
 
-export async function getAllProducts(request, response,next) {
+export async function getAllProducts(request, response, next) {
     try {
         const products = await Product.find().populate('category', 'name');
         if (!products || products.length === 0) {
@@ -11,7 +11,7 @@ export async function getAllProducts(request, response,next) {
         if (category) {
             products = products.filter(product => product.category.toLowerCase().includes(category.toLowerCase()));
         }
-     
+
         // Pagination logic
         const { page = 1, limit = 10 } = request.query;
         const startIndex = (page - 1) * limit;
@@ -27,17 +27,17 @@ export async function getAllProducts(request, response,next) {
         };
         response.set('X-Pagination', JSON.stringify(pagination));
 
-       
+
         response.status(200).json(products);
     } catch (error) {
         response.status(500).json({ error: error.message });
     }
 }
 
-export async function getProductById(request, response,next) {
+export async function getProductById(request, response, next) {
     try {
         const { productId } = request.params;
-        const product = await Product.findById(productId).populate('categoryId', 'name');
+        const product = await Product.findById(productId).populate('category', 'name');
         if (!product) {
             return response.status(404).json({ error: 'Product not found' });
         }
@@ -47,30 +47,40 @@ export async function getProductById(request, response,next) {
     }
 }
 
-export async function createProduct(request, response,next) {
+export async function createProduct(request, response, next) {
     try {
-        const { name, description, price, categoryId } = request.body;
-        const imageUrl = request.file.path; // Assuming you are using multer for file uploads
+        const { name, description, price, category } = request.body;
+        // Assicurati che request.file esista e che path sia la proprietà corretta
+        const imageUrl = request.file?.location || request.file?.path;  // Usa 'location' per S3 o 'path' per il file locale
+
+        console.log('Image URL:', imageUrl); // Log the image URL for debuggings
+
+        if (!imageUrl) {
+            return response.status(400).json({ error: 'Image upload failed or missing' });
+        }
+
 
         const newProduct = new Product({
             name,
             description,
             price,
-            categoryId,
+            category,
             imageUrl
         });
 
         await newProduct.save();
+        console.log('✅ Prodotto salvato:', newProduct);
         response.status(201).json(newProduct);
     } catch (error) {
+        console.error("Error creating product:", error);
         response.status(500).json({ error: error.message });
     }
 }
 
-export async function updateProduct (request, response , next){
-    try{
+export async function updateProduct(request, response, next) {
+    try {
         const { productId } = request.params;
-        const { name, description, price, categoryId } = request.body;
+        const { name, description, price, category } = request.body;
         const imageUrl = request.file.path; // Assuming you are using multer for file uploads
 
         const modifyProduct = await Product.findByIdAndUpdate(
@@ -79,7 +89,7 @@ export async function updateProduct (request, response , next){
                 name,
                 description,
                 price,
-                categoryId,
+                category,
                 imageUrl
             },
             { new: true }
@@ -93,8 +103,8 @@ export async function updateProduct (request, response , next){
     }
 }
 
-export async function eliminateProduct (request, response , next){
-    try{
+export async function eliminateProduct(request, response, next) {
+    try {
         const { productId } = request.params;
         const deleteProduct = await Product.findByIdAndDelete(productId);
         if (!deleteProduct) {

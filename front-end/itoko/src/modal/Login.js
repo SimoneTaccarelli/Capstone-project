@@ -33,37 +33,15 @@ function Login() {
 
   const handleGoogleLogin = async () => {
     try {
-      // Avvia il login con Google
-      const result = await loginWithGoogle();
+      // Esegui il login con Google
+      await loginWithGoogle();
       
-      // Ottieni i dati dell'utente
-      const user = result.user;
-      console.log('Utente loggato:', user);
-
-      // Ottieni il token ID di Firebase
-      const token = await user.getIdToken();
-      console.log('Token ID:', token);
-
-      // Imposta lo stato utente (facoltativo)
-      setUser(user);
-      
-      sendTokenToBackend(token); // Invia il token al backend
-
-      // Puoi inviare il token al backend per la verifica, se necessario
-      // Esempio: invia il token al tuo backend con Axios
-      // axios.post('backend/login', { token });
-
+      // Gestisci solo UI
+      handleClose();
+      navigate('/');
     } catch (error) {
       console.error('Errore login con Google:', error);
-    }
-  };
-
-  const sendTokenToBackend = async (token) => {
-    try {
-      const response = await axios.post(`${API_URL}/auth/login-google`, { token });
-      console.log('Risposta dal backend:', response.data);
-    } catch (error) {
-      console.error('Errore nell\'invio del token al backend:', error);
+      setError('Login con Google fallito. Riprova più tardi.');
     }
   };
 

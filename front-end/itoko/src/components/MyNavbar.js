@@ -6,12 +6,15 @@ import Navbar from 'react-bootstrap/Navbar';
 import NavDropdown from 'react-bootstrap/NavDropdown';
 import Login from '../modal/Login.js';
 import { useAuth } from '../context/AuthContext';
-import Administrator from '../pages/Administrator.js';
+
 
 
 
 function MyNavbar() {
-const { logout } = useAuth();
+const { logout , userData } = useAuth();
+const isAdmin = userData && userData.role === "Admin";
+ console.log("isAdmin", isAdmin);
+console.log("userData", userData);
 
 
 
@@ -26,8 +29,9 @@ const { logout } = useAuth();
             style={{ maxHeight: '100px' }}
             navbarScroll
           >
-            <Nav.Link href="#action1">Home</Nav.Link>
+            <Nav.Link href="/">Home</Nav.Link>
             <Login />  
+            
             <Nav.Link  onClick={logout} >logout</Nav.Link>        
             <NavDropdown title="Link" id="navbarScrollingDropdown">
               <NavDropdown.Item href="#action3">Action</NavDropdown.Item>
@@ -39,7 +43,9 @@ const { logout } = useAuth();
                 Something else here
               </NavDropdown.Item>
             </NavDropdown>
-            <Nav.Link href="/Administrator">Link</Nav.Link>
+            {isAdmin && (
+            <Nav.Link href="/Administrator">Administrator</Nav.Link>
+            )}
           </Nav>
           <Form className="d-flex">
             <Form.Control

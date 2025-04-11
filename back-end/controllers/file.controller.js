@@ -43,8 +43,20 @@ export const getFilesByFolderId = async (req, res) => {
     const { fileId } = req.params;
     const folder = fileId.replace(':', '');
     
+    // Costruisci il percorso completo
+    let searchExpression;
+    if (folder === 'product' || folder === 'avatar' || folder === 'design') {
+      searchExpression = `folder:itoko/${folder}`;
+    } else {
+      // Gestisci casi speciali o errori
+      return res.status(400).json({
+        success: false,
+        error: 'Cartella non valida'
+      });
+    }
+    
     const { resources } = await cloudinary.search
-      .expression(`folder:itoko/${folder}`)
+      .expression(searchExpression)
       .sort_by('created_at', 'desc')
       .max_results(100)
       .execute();
@@ -75,6 +87,7 @@ export const getFilesByFolderId = async (req, res) => {
 
 /**
  * Carica un'immagine su Cloudinary
+ * Funzione generica utilizzabile per qualsiasi tipo di file
  */
 export const uploadFile = async (req, res) => {
   try {

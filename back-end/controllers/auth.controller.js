@@ -44,6 +44,7 @@ export async function loginGoogle(request, response, next) {
                 email, 
                 firstName, 
                 lastName,
+                role: 'User', // Imposta un ruolo predefinito
                 profilePic: `https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${firstName}+${lastName}` // Assuming you want to store the profile picture URL
             });
         }
@@ -102,6 +103,25 @@ export async function login (request , response, next){
     }
 }
 
+export async function getUserData(request, response) {
+    try {
+        // Usa direttamente l'utente che è già stato trovato da verifyToken
+        const user = request.user;
+        
+        // Escludi campi sensibili senza fare una nuova query
+        response.status(200).json({
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            // altri campi
+        });
+    } catch (error) {
+        console.error("Errore nel recupero dati utente:", error);
+        response.status(500).json({ error: error.message });
+    }
+}
 
 export async function eliminateUser(request, response, next) {
     try {

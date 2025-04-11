@@ -21,6 +21,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState(null);
 
   // Funzione per la registrazione
   const signup = (email, password) => {
@@ -80,8 +81,26 @@ export const AuthProvider = ({ children }) => {
 
   // Effetto per monitorare lo stato dell'utente
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          
+          // Usa GET /auth/me o il tuo endpoint corretto
+          const response = await axios.get(`${API_URL}/auth/me`, { 
+            headers: { Authorization: `Bearer ${token}` } // ✅ headers corretto
+          });
+          console.log('Dati utente:', response.data); // ✅ log dei dati utente
+          
+          setUserData(response.data);
+        }
+        catch (error) {
+          console.error("Errore durante il recupero dei dati utente:", error);
+        }
+      } else {
+        setUserData(null);
+      }
       setLoading(false);
     });
 
@@ -91,6 +110,7 @@ export const AuthProvider = ({ children }) => {
   // Valore da fornire attraverso il contesto
   const value = {
     currentUser,
+    userData, // ✅ aggiunto userData
     signup,
     login,
     loginWithGoogle,

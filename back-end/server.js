@@ -6,7 +6,11 @@ import admin from 'firebase-admin';
 import authRouter from './routes/auth.js';
 import fileRouter from './routes/file.js';
 import productRouter from './routes/product.js';
+import stripeRouter from './routes/stripe.js';
+import orderRouter from './routes/order.js';
 
+
+import Stripe from 'stripe';
 
 
 
@@ -21,11 +25,15 @@ server.use(cors())
 server.use('/api/v1' , authRouter)
 server.use('/api/v1' , fileRouter)
 server.use('/api/v1' , productRouter)
+server.use('/api/v1/stripe' , stripeRouter)
+server.use('/api/v1/order' , orderRouter)
 
 
 admin.initializeApp({
   credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_CREDENTIALS))
 });
+
+
 
 
 

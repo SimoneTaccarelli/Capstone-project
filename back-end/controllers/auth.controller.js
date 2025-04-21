@@ -15,7 +15,7 @@ export async function freshRegister(request, response, next) {
             firstName, 
             lastName,
             firebaseUid, // Importante per il collegamento
-            profilePic: `https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${firstName}+${lastName}`
+            profilePic: null
         });
         
         response.status(201).json(user);
@@ -36,32 +36,40 @@ export async function loginGoogle(request, response, next) {
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
         
+        // Cerca l'utente sia per firebaseUid che per email
         let user = await User.findOne({firebaseUid: uid});
         
+        // Se non trovato per firebaseUid, cerca per email
         if (!user) {
-            user = await User.create({
-                firebaseUid: uid, 
-                email, 
-                firstName, 
-                lastName,
-                role: 'User', // Imposta un ruolo predefinito
-                profilePic: `https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${firstName}+${lastName}` // Assuming you want to store the profile picture URL
-            });
+            const userByEmail = await User.findOne({email});
+            
+            if (userByEmail) {
+                // Aggiorna l'utente esistente con il nuovo firebaseUid
+                user = await User.findByIdAndUpdate(
+                    userByEmail._id,
+                    { $set: { firebaseUid: uid } },
+                    { new: true }
+                );
+                console.log("Utente aggiornato con nuovo firebaseUid:", user._id);
+            } else {
+                // Crea un nuovo utente se non esiste né per uid né per email
+                user = await User.create({
+                    firebaseUid: uid, 
+                    email, 
+                    firstName, 
+                    lastName,
+                    role: 'User',
+                    profilePic: null
+                });
+                console.log("Nuovo utente creato:", user._id);
+            }
         }
-
-        // // Send welcome email
-        // const mailOptions = {
-        //     from: "itokonolab@gmail.com",
-        //     to: user.email,
-        //     subject: 'Welcome to Our Service',
-        //     text: `Hello ${firstName}, welcome to our service!`,
-        // };
-        // await mailer.sendMail(mailOptions);
         
         response.status(200).json(user);
     } catch (error) {
         console.error("Firebase token verification error:", error);
-        response.status(401).json({error: "Unauthorized"});
+        console.error("Error details:", error.message, error.code);
+        response.status(401).json({error: "Unauthorized", message: error.message});
     }
 }
 
@@ -108,14 +116,20 @@ export async function getUserData(request, response) {
         // Usa direttamente l'utente che è già stato trovato da verifyToken
         const user = request.user;
         
-        // Escludi campi sensibili senza fare una nuova query
+        if (!user) {
+            return response.status(404).json({ error: "Utente non trovato" });
+        }
+        
+        // Includi tutti i campi necessari, compreso profilePic
         response.status(200).json({
             _id: user._id,
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
             role: user.role,
-            // altri campi
+            profilePic: user.profilePic, // Aggiungi questa riga!
+            createdAt: user.createdAt
+            // altri campi che potresti voler includere
         });
     } catch (error) {
         console.error("Errore nel recupero dati utente:", error);
@@ -141,42 +155,48 @@ export async function eliminateUser(request, response, next) {
     }
 }
 
-export async function updateUser(request, response, next) {
+export const updateUser = async (req, res) => {
     try {
+      
+      
+      const userId = req.user._id;
+      const updateData = { ...req.body };
+      
+      // Se è stata caricata un'immagine, aggiungi l'URL ai dati da aggiornare
+      if (req.file) {
+        // Prova diverse proprietà possibili
+        updateData.profilePic = req.file.secure_url || req.file.path || req.file.url;
         
-        
-        const { firstName, lastName } = request.body;
-        
-        // Usa req.user che è già stato popolato dal middleware verifyToken
-        const updateData = {};
-        
-        // Aggiungi i campi solo se sono presenti
-        if (firstName) updateData.firstName = firstName;
-        if (lastName) updateData.lastName = lastName;
-        
-        // Gestione dell'immagine del profilo
-        if (request.file) {
-            const profilePic = request.file?.location || request.file?.path;
-            updateData.profilePic = profilePic;
-        }
-        
-        // Log dei dati di aggiornamento
-        console.log("Update data:", updateData);
-        console.log("User:", request.user);
-        
-        // Aggiorna usando firebaseUid invece di _id
-        const updatedUser = await User.findOneAndUpdate(
-            { firebaseUid: request.user.firebaseUid },
-            updateData,
-            { new: true }
-        );
-        
-        response.status(200).json(updatedUser);
+        // Aggiungi questo per debug
+        console.log("URL immagine che verrà salvato:", updateData.profilePic);
+      }
+      
+      // Aggiorna l'utente nel database
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true }
+      );
+      
+      // Log utente aggiornato
+      console.log("Utente aggiornato:", {
+        id: updatedUser._id,
+        profilePic: updatedUser.profilePic
+      });
+      
+      res.status(200).json({
+        success: true,
+        user: updatedUser,
+       
+      });
     } catch (error) {
-        console.error("Update error:", error);
-        response.status(500).json({ error: error.message });
+      console.error('Errore nell\'aggiornamento utente:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Impossibile aggiornare l\'utente'
+      });
     }
-}
+};
 
 export async function isAdministrator (request, response, next) {
     const token = request.headers.authorization?.split(" ")[1];

@@ -13,7 +13,11 @@ const ModifyProduct = ({ product, show, handleClose }) => {
   const { currentUser } = useAuth();
   const { updateProduct } = useProducts();
 
-  
+  // Aggiungi questi stati
+  const [currentImages, setCurrentImages] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const [imagePreview, setImagePreview] = useState([]);
 
   // Aggiorna formValues quando product cambia
   useEffect(() => {
@@ -25,8 +29,42 @@ const ModifyProduct = ({ product, show, handleClose }) => {
         category: product.category,
         stock: product.stock
       });
+      // Inizializza le immagini attuali
+      setCurrentImages(product.imageUrl || []);
+      // Reset degli stati quando cambia il prodotto
+      setImagesToDelete([]);
+      setNewImages([]);
+      setImagePreview([]);
     }
   }, [product]);
+
+  // Gestione eliminazione immagine esistente
+  const handleImageDelete = (imageUrl) => {
+    setCurrentImages(currentImages.filter(img => img !== imageUrl));
+    setImagesToDelete([...imagesToDelete, imageUrl]);
+  };
+
+  // Gestione nuove immagini
+  const handleNewImages = (e) => {
+    const files = Array.from(e.target.files);
+    setNewImages([...newImages, ...files]);
+    
+    // Crea URL per le anteprime
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setImagePreview([...imagePreview, ...newPreviews]);
+  };
+
+  // Rimuovi nuova immagine
+  const removeNewImage = (index) => {
+    const updatedImages = [...newImages];
+    updatedImages.splice(index, 1);
+    setNewImages(updatedImages);
+    
+    const updatedPreviews = [...imagePreview];
+    URL.revokeObjectURL(updatedPreviews[index]); // Libera memoria
+    updatedPreviews.splice(index, 1);
+    setImagePreview(updatedPreviews);
+  };
 
   // Gestione modifica prodotto
   const handleSaveChanges = async () => {
@@ -37,26 +75,53 @@ const ModifyProduct = ({ product, show, handleClose }) => {
       setError(null);
       
       const token = await currentUser.getIdToken();
+      
+      // Prepara i dati da inviare
+      const formData = new FormData();
+      
+      // Aggiungi tutti i campi del form
+      formData.append('name', formValues.name);
+      formData.append('price', formValues.price.toString());  // Assicurati che sia una stringa
+      formData.append('description', formValues.description);
+      formData.append('category', formValues.category);
+      formData.append('stock', formValues.stock.toString());  // Assicurati che sia una stringa
+      
+      // Aggiungi le immagini esistenti come JSON
+      formData.append('existingImages', JSON.stringify(currentImages));
+      
+      // Aggiungi eventuali nuove immagini
+      newImages.forEach(file => {
+        formData.append('images', file);  // Assicurati che questo nome corrisponda a ciò che il backend si aspetta
+      });
+      
+      console.log('Current images before sending:', currentImages);
+      
+      // Effettua la chiamata PUT
       const response = await axios.put(
         `${API_URL}/product/${product._id}`,
-        formValues,
+        formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
           }
         }
       );
+      
+      // Debug della risposta
+      console.log('Response from server:', response.data);
       
       // Aggiorna lo stato nel ProductContext
       updateProduct(response.data);
       handleClose();
     } catch (err) {
-      setError('Errore durante la modifica del prodotto');
-      console.error(err);
+      setError('Errore durante la modifica del prodotto: ' + (err.response?.data?.error || err.message));
+      console.error('Error details:', err);
     } finally {
       setLoading(false);
     }
   };
+
   if (loading) return <div className="d-flex justify-content-center"><div className="spinner-border text-primary"></div></div>;
   if (error) return <div className="alert alert-danger">{error}</div>;
 
@@ -114,6 +179,69 @@ const ModifyProduct = ({ product, show, handleClose }) => {
               value={formValues.stock || 0} 
               onChange={(e) => setFormValues({...formValues, stock: parseInt(e.target.value)})}
             />
+          </Form.Group>
+
+          {/* Aggiungi questa sezione nel form */}
+          <Form.Group className="mb-4">
+            <Form.Label>Immagini attuali</Form.Label>
+            <div className="d-flex flex-wrap gap-2 mb-3">
+              {currentImages.length > 0 ? (
+                currentImages.map((img, index) => (
+                  <div key={index} className="position-relative" style={{width: '100px'}}>
+                    <img 
+                      src={img} 
+                      alt={`Prodotto ${index}`} 
+                      className="img-thumbnail" 
+                      style={{width: '100px', height: '100px', objectFit: 'cover'}}
+                    />
+                    <Button 
+                      variant="danger" 
+                      size="sm" 
+                      className="position-absolute top-0 end-0"
+                      onClick={() => handleImageDelete(img)}
+                    >
+                      <i className="bi bi-x"></i>
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted">Nessuna immagine disponibile</p>
+              )}
+            </div>
+            
+            <Form.Label>Aggiungi nuove immagini</Form.Label>
+            <Form.Control 
+              type="file" 
+              multiple 
+              accept="image/*"
+              onChange={handleNewImages}
+            />
+            
+            {imagePreview.length > 0 && (
+              <>
+                <Form.Label className="mt-3">Anteprima nuove immagini</Form.Label>
+                <div className="d-flex flex-wrap gap-2">
+                  {imagePreview.map((preview, index) => (
+                    <div key={index} className="position-relative" style={{width: '100px'}}>
+                      <img 
+                        src={preview} 
+                        alt={`Anteprima ${index}`} 
+                        className="img-thumbnail" 
+                        style={{width: '100px', height: '100px', objectFit: 'cover'}}
+                      />
+                      <Button 
+                        variant="danger" 
+                        size="sm" 
+                        className="position-absolute top-0 end-0"
+                        onClick={() => removeNewImage(index)}
+                      >
+                        <i className="bi bi-x"></i>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </Form.Group>
         </Form>
       </Modal.Body>

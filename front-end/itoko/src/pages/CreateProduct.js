@@ -1,4 +1,4 @@
-import { Form, Card } from "react-bootstrap";
+import { Form, Container, Row, Col, Button } from "react-bootstrap";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -27,15 +27,11 @@ const CreateProduct = () => {
     // Stati per gestire immagini e anteprime
     const [productImages, setProductImages] = useState([]);
     const [productImagePreviews, setProductImagePreviews] = useState([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     
     // Verifica se l'utente è amministratore
     const isAdmin = userData && userData.role === "Admin";
 
-    /**
-     * Gestisce il cambio di immagini del prodotto
-     * Supporta sia input file standard che selezione da Cloudinary
-     * @param {Object} filesOrEvent - File da Cloudinary o evento da input
-     */
     const handleImageChange = (filesOrEvent) => {
         // Caso 1: Input file standard da form
         if (filesOrEvent.target && filesOrEvent.target.files) {
@@ -83,6 +79,7 @@ const CreateProduct = () => {
         }
 
         try {
+            setIsSubmitting(true);
             // Ottieni token di autenticazione da Firebase
             const token = await currentUser.getIdToken();
             
@@ -100,75 +97,127 @@ const CreateProduct = () => {
             navigate("/administrator");
         } catch (error) {
             console.error(error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     return (
-        <Card className="text-center" style={{ width: '18rem', margin: 'auto', marginTop: '50px' }}>
-            <Form onSubmit={CreateProduct}>
-                <Form.Group controlId="productName">
-                    <Form.Label>Product Name</Form.Label>
-                    <Form.Control 
-                        type="text" 
-                        placeholder="Enter product name" 
-                        value={productName} 
-                        onChange={(e) => setProductName(e.target.value)} 
-                    />
-                </Form.Group>
-                <Form.Group controlId="productDescription">
-                    <Form.Label>Product Description</Form.Label>
-                    <Form.Control 
-                        as="textarea" 
-                        rows={3} 
-                        placeholder="Enter product description" 
-                        value={productDescription} 
-                        onChange={(e) => setProductDescription(e.target.value)} 
-                    />
-                </Form.Group>
-                <Form.Group controlId="productPrice">
-                    <Form.Label>Product Price</Form.Label>
-                    <Form.Control 
-                        type="number" 
-                        placeholder="Enter product price" 
-                        value={productPrice} 
-                        onChange={(e) => setProductPrice(e.target.value)} 
-                    />
-                </Form.Group>
-                <Form.Group controlId="productCategory">
-                    <Form.Label>Product Category</Form.Label>
-                    <Form.Control 
-                        type="text" 
-                        placeholder="Enter product category" 
-                        value={productCategory} 
-                        onChange={(e) => setProductCategory(e.target.value)} 
-                    />
-                </Form.Group>
-                <Form.Group controlId="productStock">
-                    <Form.Label>Product Stock</Form.Label>
-                    <Form.Control 
-                        type="number" 
-                        placeholder="Enter product stock" 
-                        value={productStock} 
-                        onChange={(e) => setProductStock(e.target.value)} 
-                    />
-                </Form.Group>
-                <CloudImage
-                    handleImageChange={handleImageChange} 
-                />
-                <Form.Group controlId="productImages">
-                </Form.Group>
-                {productImagePreviews.map((preview, index) => (
-                    <img 
-                        key={index}
-                        src={preview} 
-                        alt={`Preview ${index + 1}`}
-                        className="img-thumbnail mt-2"
-                        style={{height: '100px'}}
-                    />
-                ))}
-                <button type="submit" className="btn btn-primary mt-3" >Create Product</button>
-            </Form>
-        </Card>
+        <Container className="py-5">
+            <div className="bg-light p-4 rounded-3 shadow-sm mb-4">
+                <h2 className="text-center mb-4">Aggiungi Nuovo Prodotto</h2>
+                
+                <Form onSubmit={CreateProduct}>
+                    <Row className="g-4">
+                        {/* Colonna sinistra - primi 3 input */}
+                        <Col md={6}>
+                            <Form.Group controlId="productName" className="mb-3">
+                                <Form.Label>Nome Prodotto</Form.Label>
+                                <Form.Control 
+                                    type="text" 
+                                    placeholder="Inserisci nome prodotto" 
+                                    value={productName} 
+                                    onChange={(e) => setProductName(e.target.value)} 
+                                    required
+                                />
+                            </Form.Group>
+                            
+                            <Form.Group controlId="productDescription" className="mb-3">
+                                <Form.Label>Descrizione</Form.Label>
+                                <Form.Control 
+                                    as="textarea" 
+                                    rows={4} 
+                                    placeholder="Inserisci descrizione prodotto" 
+                                    value={productDescription} 
+                                    onChange={(e) => setProductDescription(e.target.value)} 
+                                    required
+                                />
+                            </Form.Group>
+                            
+                            <Form.Group controlId="productPrice" className="mb-3">
+                                <Form.Label>Prezzo €</Form.Label>
+                                <Form.Control 
+                                    type="number" 
+                                    step="0.01"
+                                    placeholder="Inserisci prezzo" 
+                                    value={productPrice} 
+                                    onChange={(e) => setProductPrice(e.target.value)} 
+                                    required
+                                />
+                            </Form.Group>
+                        </Col>
+                        
+                        {/* Colonna destra - altri 3 input */}
+                        <Col md={6}>
+                            <Form.Group controlId="productCategory" className="mb-3">
+                                <Form.Label>Categoria</Form.Label>
+                                <Form.Control 
+                                    type="text" 
+                                    placeholder="Inserisci categoria" 
+                                    value={productCategory} 
+                                    onChange={(e) => setProductCategory(e.target.value)} 
+                                    required
+                                />
+                            </Form.Group>
+                            
+                            <Form.Group controlId="productStock" className="mb-3">
+                                <Form.Label>Disponibilità</Form.Label>
+                                <Form.Control 
+                                    type="number" 
+                                    placeholder="Inserisci quantità disponibile" 
+                                    value={productStock} 
+                                    onChange={(e) => setProductStock(e.target.value)} 
+                                    required
+                                />
+                            </Form.Group>
+                            
+                            <Form.Group controlId="productImages" className="mb-3">
+                                <Form.Label>Immagini Prodotto</Form.Label>
+                                <div className="py-2">
+                                    <CloudImage
+                                        handleImageChange={handleImageChange} 
+                                    />
+                                </div>
+                            </Form.Group>
+                        </Col>
+                    </Row>
+                    
+                    {/* Visualizzazione delle immagini in riga */}
+                    {productImagePreviews.length > 0 && (
+                        <div className="mt-4">
+                            <h5 className="mb-3">Anteprima Immagini</h5>
+                            <Row className="g-2">
+                                {productImagePreviews.map((preview, index) => (
+                                    <Col key={index} xs={6} sm={4} md={3} lg={2}>
+                                        <div className="position-relative">
+                                            <img 
+                                                src={preview} 
+                                                alt={`Preview ${index + 1}`}
+                                                className="img-thumbnail w-100 object-fit-cover"
+                                                style={{height: '150px'}}
+                                            />
+                                        </div>
+                                    </Col>
+                                ))}
+                            </Row>
+                        </div>
+                    )}
+                    
+                    {/* Pulsante submit */}
+                    <div className="text-center mt-4">
+                        <Button 
+                            type="submit" 
+                            variant="primary" 
+                            size="lg"
+                            className="px-5"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? "Creazione in corso..." : "Crea Prodotto"}
+                        </Button>
+                    </div>
+                </Form>
+            </div>
+        </Container>
     );
 }
 

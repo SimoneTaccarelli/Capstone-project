@@ -1,61 +1,146 @@
-import Button from 'react-bootstrap/Button';
-import Container from 'react-bootstrap/Container';
-import Form from 'react-bootstrap/Form';
-import Nav from 'react-bootstrap/Nav';
-import Navbar from 'react-bootstrap/Navbar';
-import NavDropdown from 'react-bootstrap/NavDropdown';
+import React, { useState } from 'react';
+import { Button, Container, Nav, Navbar, Form, InputGroup, Dropdown } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
 import Login from '../modal/Login.js';
 import { useAuth } from '../context/AuthContext';
-
-
-
+import Cart from '../modal/Cart.js';
+import { useDesign } from '../context/DesignContext';
+import { useOrder } from '../context/OrderContext.js';
 
 function MyNavbar() {
-const { logout , userData } = useAuth();
-const isAdmin = userData && userData.role === "Admin";
- console.log("isAdmin", isAdmin);
-console.log("userData", userData);
+  const { logout, userData, currentUser } = useAuth();
+  const isAdmin = userData && userData.role === "Admin";
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const { logo } = useDesign();
+  const { getUserOrders } = useOrder();
 
+  // Recupera gli ordini dell'utente loggato
+  const fetchUserOrders = async () => {
+    if (currentUser) {
+      try {
+        await getUserOrders();
+      } catch (error) {
 
+        console.error("Errore durante il recupero degli ordini:", error);
+      }
+    }
+  };
+
+  // Gestisce l'invio della ricerca
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Funzioni per navigare alle diverse sezioni
+  const goToProfile = () => {
+    navigate('/profile');
+  };
+
+  const goToOrders = () => {
+    navigate('/orders');
+    fetchUserOrders(); // Recupera gli ordini quando si accede alla pagina
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Errore durante il logout:", error);
+    }
+  };
 
   return (
-    <Navbar expand="lg" className="bg-body-tertiary">
-      <Container fluid>
-        <Navbar.Brand href="#">Logo itoko</Navbar.Brand>
+    <Navbar bg="light" expand="lg" sticky="top" className="shadow-sm">
+      <Container>
+        <Navbar.Brand as={Link} to="/">
+          {logo ? (
+            <img 
+              src={logo} 
+              alt="Logo Itoko" 
+              height="40" 
+              className="d-inline-block align-top me-2"
+            />
+          ) : (
+            <span>Itoko</span>
+          )}
+        </Navbar.Brand>
+        
         <Navbar.Toggle aria-controls="navbarScroll" />
+        
         <Navbar.Collapse id="navbarScroll">
-          <Nav
-            className="me-auto my-2 my-lg-0"
-            style={{ maxHeight: '100px' }}
-            navbarScroll
-          >
-            <Nav.Link href="/">Home</Nav.Link>
-            <Login />  
-            
-            <Nav.Link  onClick={logout} >logout</Nav.Link>        
-            <NavDropdown title="Link" id="navbarScrollingDropdown">
-              <NavDropdown.Item href="#action3">Action</NavDropdown.Item>
-              <NavDropdown.Item href="#action4">
-                Another action
-              </NavDropdown.Item>
-              <NavDropdown.Divider />
-              <NavDropdown.Item href="#action5">
-                Something else here
-              </NavDropdown.Item>
-            </NavDropdown>
+          <Nav className="me-auto">
+            <Nav.Link as={Link} to="/">Home</Nav.Link>
+            <Nav.Link as={Link} to="/products">Prodotti</Nav.Link>
+            <Nav.Link as={Link} to="/about">Chi Siamo</Nav.Link>
             {isAdmin && (
-            <Nav.Link href="/Administrator">Administrator</Nav.Link>
+              <Nav.Link as={Link} to="/administrator">Amministrazione</Nav.Link>
             )}
           </Nav>
-          <Form className="d-flex">
-            <Form.Control
-              type="search"
-              placeholder="Search"
-              className="me-2"
-              aria-label="Search"
-            />
-            <Button variant="outline-success">Search</Button>
-          </Form>
+          
+          {/* CORRETTO: Layout flessibile adattivo desktop/mobile */}
+          <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-2">
+            {/* Barra di ricerca */}
+            <Form className="d-flex" onSubmit={handleSearch}>
+              <InputGroup style={{ width: '180px' }}>
+                <Form.Control
+                  type="text"
+                  placeholder="Cerca prodotti..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Cerca prodotti"
+                  size="sm"
+                />
+                <Button variant="outline-primary" type="submit" size="sm">
+                  <i className="bi bi-search"></i>
+                </Button>
+              </InputGroup>
+            </Form>
+            
+            {/* Wrapper per Carrello e Profilo */}
+            <div className="d-flex align-items-center gap-2">
+              {/* Carrello */}
+              <Cart />
+              
+              {/* Gestione login/profilo utente */}
+              {!currentUser ? (
+                <Login />
+              ) : (
+                <Dropdown align="end">
+                  <Dropdown.Toggle variant="light" id="dropdown-profile" className="d-flex align-items-center border-0 bg-transparent">
+                    <img
+                      src={userData?.profilePic || `https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${userData?.firstName || 'U'}+${userData?.lastName || 'N'}`} 
+                      alt="Profilo" 
+                      className="rounded-circle me-1"
+                      style={{height: "30px", width: "30px", objectFit: "cover"}}
+                    /> 
+                    <span className="ms-1">
+                      {userData?.firstName || 'Profilo'}
+                    </span>
+                  </Dropdown.Toggle>
+
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={goToProfile}>
+                      <i className="bi bi-person me-2"></i>
+                      Il mio profilo
+                    </Dropdown.Item>
+                    <Dropdown.Item onClick={goToOrders}>
+                      <i className="bi bi-box me-2"></i>
+                      I miei ordini
+                    </Dropdown.Item>
+                    <Dropdown.Divider />
+                    <Dropdown.Item onClick={handleLogout} className="text-danger">
+                      <i className="bi bi-box-arrow-right me-2"></i>
+                      Logout
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              )}
+            </div>
+          </div>
         </Navbar.Collapse>
       </Container>
     </Navbar>

@@ -90,6 +90,16 @@ export async function updateProduct(request, response, next) {
     try {
         const { productId } = request.params;
         const { name, description, price, category, stock } = request.body;
+        let existingImages = [];
+    
+        // Parse JSON string to array
+        if (request.body.existingImages) {
+            try {
+                existingImages = JSON.parse(request.body.existingImages);
+            } catch (e) {
+                console.error('Errore nel parsing delle immagini esistenti:', e);
+            }
+        }
         
         // Crea l'oggetto per l'aggiornamento
         const updateProduct = {};
@@ -97,17 +107,18 @@ export async function updateProduct(request, response, next) {
         if (description) updateProduct.description = description;   
         if (price) updateProduct.price = price;
         if (category) updateProduct.category = category;
-        if (stock !== undefined) updateProduct.stock = stock; // Corretto da 'strock' a 'stock'
+        if (stock !== undefined) updateProduct.stock = stock;
 
+        // Gestione immagini
+        updateProduct.imageUrl = existingImages;
         
-        // Gestione di più immagini
+        // Aggiungi nuove immagini
         if (request.files && request.files.length > 0) {
-            const imageUrls = [];
-            for (const file of request.files) {
-                imageUrls.push(file.path);
-            }
-            updateProduct.imageUrl = imageUrls; // Aggiorna con array di URL
+            const newImageUrls = request.files.map(file => file.path);
+            updateProduct.imageUrl = [...existingImages, ...newImageUrls];
         }
+
+        console.log('Immagini finali:', updateProduct.imageUrl);
 
         const modifyProduct = await Product.findByIdAndUpdate(
             productId,

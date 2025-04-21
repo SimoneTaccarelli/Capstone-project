@@ -5,6 +5,9 @@ import { useProducts } from '../context/ProductContext';
 import axios from 'axios';
 import { API_URL } from '../config/config';
 import ModifyProduct from '../modal/ModifyProduct';
+import CloudDesign from '../modal/CloudDesign';
+import { Link } from 'react-router-dom';
+
 
 const Administrator = () => {
   const { currentUser, userData } = useAuth();
@@ -15,6 +18,8 @@ const Administrator = () => {
   
   const [showEditModal, setShowEditModal] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
+
+  const [imagePreview, setImagePreview] = useState(null);
 
   const isAdmin = userData && userData.role === 'Admin';
 
@@ -57,10 +62,61 @@ const Administrator = () => {
     setEditProduct(null);
   };
 
+  const handleImageChange = (filesOrEvent) => {
+    // Caso 1: File input standard
+    if (filesOrEvent.target && filesOrEvent.target.files && filesOrEvent.target.files[0]) {
+        const file = filesOrEvent.target.files[0]; // Prendi solo il primo file
+        setImagePreview(URL.createObjectURL(file));
+    } 
+    // Caso 2: Immagine da CloudImage
+    else if (filesOrEvent.url) {
+        setImagePreview(filesOrEvent.url);
+    }
+  };
+
   if (loading) return <div className="d-flex justify-content-center"><div className="spinner-border text-primary"></div></div>;
   if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
+    <>
+    <div className='container'>
+      <div className="row align-items-start mt-4 mb-4">
+        {/* Colonna di sinistra */}
+        <div className="col-md-6">
+          <div className="mb-4">
+            <h1>Totale ordini</h1>
+            <Link to="/OrderAdmin" className="btn btn-primary">
+              Gestione Ordini
+            </Link>
+          </div>
+        </div>
+        
+        {/* Colonna di destra */}
+        <div className="col-md-6">
+          <div className="text-center">
+            <h2>Immagine Sfondo</h2>
+            <CloudDesign handleImageChange={handleImageChange} />
+            
+            {imagePreview && (
+              <div className="mt-3">
+                <h5>Anteprima Sfondo:</h5>
+                <img 
+                  src={imagePreview} 
+                  alt="Anteprima sfondo" 
+                  style={{ 
+                    maxHeight: '200px', 
+                    maxWidth: '100%',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px' 
+                  }} 
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestione Prodotti</h2>
@@ -151,6 +207,7 @@ const Administrator = () => {
         handleClose={handleCloseModal}
       />
     </div>
+    </>
   );
 };
 

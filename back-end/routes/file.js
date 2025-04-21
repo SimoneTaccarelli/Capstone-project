@@ -1,21 +1,36 @@
 import { Router } from "express";
 import * as fileController from "../controllers/file.controller.js";
-import { productUpload, avatarUpload, designUpload } from "../utilities/cloudinary.js";
+import { 
+  productUpload, 
+  avatarUpload, 
+  logoUpload, 
+  frontImageUpload 
+} from "../utilities/cloudinary.js";
 
 const router = Router();
 
-// Rotte per recuperare i file
+// ===== ROTTE GENERALI PER FILE =====
+// Recupera tutti i file
 router.get("/file", fileController.getAllFiles);
-router.get("/file/:fileId", fileController.getFilesByFolderId);
 
-// Rotte per caricare i file nelle cartelle specifiche
-router.post("/file/upload/product", productUpload.single('image'), fileController.uploadFile);
-router.post("/file/upload/avatar", avatarUpload.single('image'), fileController.uploadFile);
-router.post("/file/upload/design", designUpload.single('image'), fileController.uploadFile);
-router.get("/file/product" , fileController.getFilesByFolderId);
-router.get("/file/avatar" , fileController.getFilesByFolderId);
-router.get("/file/design" , fileController.getFilesByFolderId);
 // Elimina file
 router.delete("/file/:id", fileController.eliminateFile);
+
+// ===== ROTTE PER UPLOAD PRODOTTI E AVATAR =====
+// Upload immagine prodotto
+router.post("/file/upload/product", productUpload.single('image'), fileController.uploadFile);
+
+// Upload avatar utente
+router.post("/file/upload/avatar", avatarUpload.single('image'), fileController.uploadFile);
+
+// ===== ROTTE PER DESIGN =====
+// Recupera impostazioni design (logo e frontImage)
+router.get("/file/design", fileController.getDesignSettings);
+
+// Upload logo
+router.post("/file/upload/logo", logoUpload.single('image'), fileController.uploadLogoFile);
+
+// Upload immagine frontale
+router.post("/file/upload/frontimage", frontImageUpload.single('image'), fileController.uploadFrontImageFile);
 
 export default router;

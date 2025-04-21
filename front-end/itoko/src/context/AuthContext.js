@@ -87,11 +87,10 @@ export const AuthProvider = ({ children }) => {
         try {
           const token = await user.getIdToken();
           
-          // Usa GET /auth/me o il tuo endpoint corretto
           const response = await axios.get(`${API_URL}/auth/me`, { 
             headers: { Authorization: `Bearer ${token}` } // ✅ headers corretto
           });
-          console.log('Dati utente:', response.data); // ✅ log dei dati utente
+          console.log('Dati utente:', response.data);
           
           setUserData(response.data);
         }

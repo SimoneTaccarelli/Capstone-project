@@ -58,19 +58,29 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  // Ottieni un ordine specifico per ID (verificando proprietà)
+  // Ottieni un ordine specifico per ID
   const getOrderById = async (orderId) => {
     setLoading(true);
     setError(null);
     
     try {
-      const headers = await getAuthHeaders();
-      const response = await axios.get(`${API_URL}/order/${orderId}`, headers);
-      setCurrentOrder(response.data);
-      return response.data;
+      console.log("Cercando ordine con ID:", orderId);
+      const response = await axios.get(`${API_URL}/order/public/${orderId}`);
+      console.log("Risposta dal server:", response.data);
+      
+      const orderData = response.data;
+      
+      // Aggiorna currentOrder per visualizzazione dettagliata
+      setCurrentOrder(orderData);
+      
+      // IMPORTANTE: Aggiorna anche orders per la tabella
+      setOrders([orderData]);
+      
+      return orderData;
     } catch (err) {
       console.error('Errore nel recupero dell\'ordine:', err);
       setError(err.response?.data?.error || 'Errore nel recupero dell\'ordine');
+      setOrders([]); // Pulisci orders in caso di errore
       return null;
     } finally {
       setLoading(false);

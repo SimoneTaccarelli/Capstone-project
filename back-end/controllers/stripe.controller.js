@@ -62,15 +62,24 @@ export async function PaymentRequest(request, response) {
       quantity: item.quantity,
     }));
     
-    const session = await stripe.checkout.sessions.create({
+    // Crea la configurazione della sessione
+    const sessionConfig = {
       payment_method_types: ['card'],
       line_items,
       mode: 'payment',
       metadata: { orderId: order._id.toString() },
-      client_reference_id: userId,
+      // Rimuovi client_reference_id dall'oggetto di base
       success_url: `${request.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}&order_id=${order._id}`,
       cancel_url: `${request.headers.origin}/cancel?order_id=${order._id}`,
-    });
+    };
+
+    // Aggiungi client_reference_id solo se userId esiste
+    if (userId) {
+      sessionConfig.client_reference_id = userId;
+    }
+
+    // Crea la sessione
+    const session = await stripe.checkout.sessions.create(sessionConfig);
     
     response.status(200).json({ id: session.id, orderId: order._id });
   } catch (error) {

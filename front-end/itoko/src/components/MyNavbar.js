@@ -7,6 +7,7 @@ import Cart from '../modal/Cart.js';
 import { useDesign } from '../context/DesignContext';
 import { useOrder } from '../context/OrderContext.js';
 
+
 function MyNavbar() {
   const { logout, userData, currentUser } = useAuth();
   const isAdmin = userData && userData.role === "Admin";
@@ -41,7 +42,7 @@ function MyNavbar() {
   };
 
   const goToOrders = () => {
-    navigate('/orders');
+    navigate('/ordersUser');
     fetchUserOrders(); // Recupera gli ordini quando si accede alla pagina
   };
 
@@ -107,7 +108,12 @@ function MyNavbar() {
               
               {/* Gestione login/profilo utente */}
               {!currentUser ? (
+                <>
                 <Login />
+                <Link to="/order" className="btn btn-outline-primary btn-sm">
+                  <i className="bi bi-box"></i> I miei ordini
+                </Link>
+                </>
               ) : (
                 <Dropdown align="end">
                   <Dropdown.Toggle variant="light" id="dropdown-profile" className="d-flex align-items-center border-0 bg-transparent">

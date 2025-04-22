@@ -94,6 +94,14 @@ function Cart() {
         }
     };
 
+    if (loading) {
+        return <div className="spinner"></div>;
+    }
+
+    if (error) {
+        return <div className="alert alert-danger">{error}</div>;
+    }
+
     return (
         <>
             <Button 

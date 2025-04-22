@@ -10,6 +10,7 @@ import SuccessPayment from "../pages/SuccessPayment";
 import ProfileUser from "../pages/ProfileUser";
 import OrderAdmin from "../pages/OrderAdmin";
 import OrderUser from "../pages/OrderUser";
+import Order from "../pages/Order";
 
 
 
@@ -24,11 +25,11 @@ const AppRoutes = () => {
         <Routes>
             <Route path="/success" element={<SuccessPayment />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Register />} />
             <Route path="/details/:id" element={<Details />} />
+            <Route path="/order" element={<Order />} />
             {(user || isAdmin )&& (
                 <>
-                <Route path="/orders" element={<OrderUser />} />
+                <Route path="/ordersUser" element={<OrderUser />} />
                 <Route path="/profile" element={<ProfileUser />} />
                 </>
             )}

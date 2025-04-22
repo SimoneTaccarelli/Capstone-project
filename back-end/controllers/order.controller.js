@@ -74,12 +74,69 @@ export async function getPublicOrder(req, res) {
       status: order.status,
       createdAt: order.createdAt,
       totalAmount: order.totalAmount
+      
     };
     
     res.status(200).json(publicOrder);
   } catch (error) {
     console.error("Error fetching public order:", error);
     res.status(500).json({ error: "Error fetching order" });
+  }
+}
+
+// Cerca un ordine tramite ID senza richiedere autenticazione
+export async function findOrderById(req, res) {
+  try {
+    const { orderId } = req.params;
+    
+    // Verifica che l'ID sia valido
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({ error: "ID ordine non valido" });
+    }
+    
+    const order = await Order.findById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({ error: "Ordine non trovato" });
+    }
+    
+    // Restituisci solo informazioni non sensibili
+    const publicOrder = {
+      _id: order._id,  // ✓ Qui è presente
+      items: order.items,
+      status: order.status,
+      createdAt: order.createdAt,
+      totalAmount: order.totalAmount
+    };
+    
+    res.status(200).json(publicOrder);
+  } catch (error) {
+    console.error("Errore ricerca ordine:", error);
+    res.status(500).json({ error: "Errore durante la ricerca dell'ordine" });
+  }
+}
+
+// Ottieni gli ultimi ordini pubblici (senza dati sensibili)
+export async function getRecentOrders(req, res) {
+  try {
+    // Limita a 10 ordini recenti
+    const orders = await Order.find({})
+      .sort({ createdAt: -1 })
+      .limit(10);
+    
+    // Restituisci solo informazioni non sensibili
+    const publicOrders = orders.map(order => ({
+      _id: order._id,
+      items: order.items,
+      status: order.status,
+      createdAt: order.createdAt,
+      totalAmount: order.totalAmount
+    }));
+    
+    res.status(200).json(publicOrders);
+  } catch (error) {
+    console.error("Errore nel recupero ordini recenti:", error);
+    res.status(500).json({ error: "Errore nel recupero degli ordini" });
   }
 }
 

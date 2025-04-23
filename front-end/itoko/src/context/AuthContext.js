@@ -6,7 +6,8 @@ import {
   onAuthStateChanged,
   signInWithPopup,
   GoogleAuthProvider,
-  updateProfile
+  updateProfile,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import axios from 'axios';
@@ -26,6 +27,39 @@ export const AuthProvider = ({ children }) => {
   const getCurrentToken = async () => {
     if (!currentUser) throw new Error('Nessun utente autenticato');
     return await currentUser.getIdToken();
+  };
+
+  const getCurrentUser = async () => {
+    try {
+      // Verifica se l'utente è autenticato prima di fare la richiesta
+      if (!auth.currentUser) {
+        console.log('Nessun utente autenticato, salto la richiesta /auth/me');
+        return null;
+      }
+      
+      // Ottieni il token con un breve ritardo per assicurarsi che sia valido
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const token = await auth.currentUser.getIdToken(true);
+      
+      if (!token) {
+        console.log('Nessun token disponibile');
+        return null;
+      }
+      
+      const response = await axios.get(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      return response.data;
+    } catch (error) {
+      // Gestisci l'errore 404 in modo più silenzioso
+      if (error.response?.status === 404) {
+        console.log('Utente non trovato nel database, possibile nuova registrazione');
+        return null;
+      }
+      console.error("Errore durante il recupero dei dati utente:", error);
+      return null;
+    }
   };
 
   const login = async (email, password) => {
@@ -141,22 +175,80 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError("");
       
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      const user = result.user;
+      console.log("1. Iniziando registrazione Firebase per:", email);
       
+      // 1. Verifica se l'utente esiste già
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        if (methods && methods.length > 0) {
+          throw new Error("Questa email è già registrata");
+        }
+      } catch (emailCheckError) {
+        if (emailCheckError.message !== "Questa email è già registrata") {
+          console.log("Errore verifica email:", emailCheckError);
+        } else {
+          throw emailCheckError;
+        }
+      }
+      
+      // 2. Crea l'utente in Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      console.log("2. Utente Firebase creato:", user.uid);
+      
+      // 3. Aggiorna il profilo in Firebase
       await updateProfile(user, {
         displayName: `${firstName} ${lastName}`
       });
       
+      // 4. Ottieni il token
       const token = await user.getIdToken();
-      await axios.post(`${API_URL}/auth/register`, {
-        firstName, lastName, email
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
       
-      return { success: true };
+      console.log("3. Token ottenuto, inoltrando al backend");
+      
+      // 5. Verifica connessione al backend
+      try {
+        // Prima fai una richiesta di ping per verificare che il backend sia accessibile
+        await axios.get(`${API_URL}/ping`);
+      } catch (pingError) {
+        console.log("Backend non raggiungibile:", pingError);
+        // Non bloccare la registrazione, continuiamo comunque
+      }
+      
+      try {
+        // 6. Invia i dati al backend
+        const response = await axios.post(`${API_URL}/auth/register`, {
+          firstName, 
+          lastName, 
+          email,
+          firebaseUid: user.uid
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log("4. Risposta dal backend:", response.data);
+        return { success: true, user: response.data };
+      } catch (backendError) {
+        console.log("Errore dal backend ma utente Firebase creato:", backendError);
+        // Non bloccare la registrazione, l'utente Firebase esiste
+        return { 
+          success: true, 
+          warning: "Utente creato in Firebase ma ci sono stati problemi con il backend. Alcune funzionalità potrebbero non essere disponibili.",
+          user: {
+            email,
+            firstName,
+            lastName,
+            firebaseUid: user.uid
+          }
+        };
+      }
     } catch (error) {
+      console.error("Errore completo:", error);
+      
+      // Se l'utente è stato creato in Firebase ma c'è stato un errore successivo
+      // non eliminarlo, teniamo l'account
+      
       setError(error.message);
       return { success: false, error: error.message };
     } finally {

@@ -1,26 +1,76 @@
 import User from '../models/Users.js';
 import admin from 'firebase-admin';
-//import mailer from '../helper/mailer.js';
+import mailer from '../helper/mailer.js';
+import mongoose from 'mongoose';
 
 export async function freshRegister(request, response, next) {
     try {
+        console.log("\n------- NUOVA REGISTRAZIONE -------");
+        console.log("⭐ Richiesta di registrazione ricevuta:", request.body);
+        
         const {email, firstName, lastName, firebaseUid} = request.body;
         
+        // Log dettagliati
+        console.log("Email:", email);
+        console.log("FirebaseUID:", firebaseUid);
+        
+        // AGGIUNGI log della connessione MongoDB
+        console.log("Stato connessione MongoDB:", mongoose.connection.readyState);
+        // 0 = disconnesso, 1 = connesso, 2 = connessione in corso, 3 = disconnessione in corso
+        
         if (!email || !firstName || !lastName || !firebaseUid) {
+            console.log("❌ Campi mancanti:", {
+                email: !email,
+                firstName: !firstName,
+                lastName: !lastName,
+                firebaseUid: !firebaseUid
+            });
             return response.status(400).json({error: "All fields are required"});
         }
         
-        const user = await User.create({
+        try {
+            // Verifica se l'utente esiste già
+            const existingUser = await User.findOne({ firebaseUid });
+            console.log("Utente esistente?", existingUser ? "SI" : "NO");
+            
+            if (existingUser) {
+                console.log("❌ Utente già esistente con firebaseUid:", firebaseUid);
+                return response.status(200).json({
+                    message: "User already exists",
+                    user: existingUser
+                });
+            }
+        } catch (findError) {
+            console.error("❌ Errore nella ricerca utente:", findError);
+        }
+        
+        console.log("✅ Creazione utente in MongoDB...");
+        
+        const user = new User({
             email,
             firstName, 
             lastName,
-            firebaseUid, // Importante per il collegamento
-            profilePic: null
+            firebaseUid,
+            profilePic: null,
+            role: 'User'
         });
         
-        response.status(201).json(user);
+        try {
+            await user.save();
+            console.log("✅ Utente salvato con successo:", user._id);
+        } catch (saveError) {
+            console.error("❌ ERRORE NEL SALVATAGGIO:", saveError);
+            return response.status(500).json({error: "Errore nel salvataggio: " + saveError.message});
+        }
+        
+        // Aggiungi l'utente alla request per il middleware successivo
+        request.registeredUser = user;
+        
+        // Chiama next() SENZA inviare risposta
+        next();
     } catch (error) {
-        response.status(400).json({error: error.message});
+        console.error("❌ Errore generale nella registrazione:", error);
+        response.status(500).json({error: error.message});
     }
 }
 
@@ -218,6 +268,65 @@ export async function isAdministrator (request, response, next) {
         
     } catch (error) {
         response.status(401).json({error: error.message});
+    }
+}
+
+export async function welcomeEmail(request, response, next) {
+    const {email} = request.body;
+    try {
+        if (!email) {
+            return response.status(400).json({error: "Email is required"});
+        }
+
+
+        
+        // Invia l'email di benvenuto
+        await mailer.sendWelcomeEmail({
+            from:'Itokonolab@hotmail.com',
+            to: email,
+            subject: 'Benvenuto in ItokoNolab',
+            text: 'Grazie per esserti registrato! Siamo felici di averti con noi.'
+        });
+        
+        response.status(200).json({message: "Welcome email sent successfully"});
+    } catch (error) {
+        response.status(500).json({error: error.message});
+    }
+}
+
+export async function sendWelcomeEmail(request, response) {
+    try {
+        // Ottieni l'utente dalla request (passato da freshRegister)
+        const user = request.registeredUser;
+        
+        if (!user || !user.email) {
+            return response.status(400).json({error: "Email mancante"});
+        }
+        
+        // Invia l'email di benvenuto
+        await mailer.sendWelcomeEmail({
+            from: 'Itokonolab@hotmail.com',
+            to: user.email,
+            subject: 'Benvenuto in ItokoNolab',
+            text: `Ciao ${user.firstName},\n\nGrazie per esserti registrato! Siamo felici di averti con noi.\n\nItokoNolab Team`
+        });
+        
+        console.log("✅ Email di benvenuto inviata a:", user.email);
+        
+        // Ora invia la risposta finale con i dati utente
+        response.status(201).json(user);
+    } catch (error) {
+        console.error("❌ Errore nell'invio email:", error);
+        // Se l'invio email fallisce, invia comunque i dati utente
+        // ma indica che l'email non è stata inviata
+        if (request.registeredUser) {
+            response.status(201).json({ 
+                ...request.registeredUser.toObject(), 
+                emailSent: false 
+            });
+        } else {
+            response.status(500).json({error: "Errore nell'invio email"});
+        }
     }
 }
 

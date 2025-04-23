@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import { auth } from '../firebase/config';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
 
@@ -37,24 +38,30 @@ export const OrderProvider = ({ children }) => {
 
   // Recupera gli ordini dell'utente loggato
   const getUserOrders = async () => {
-    if (!currentUser) return;
-    
-    setLoading(true);
-    setError(null);
-    
     try {
-      const headers = await getAuthHeaders();
-      const response = await axios.get(`${API_URL}/order/my-orders`, headers);
-      setOrders(response.data);
-      console.log('Ordini utente:', response.data);
-      return response.data;
+      // Verifica se c'è un utente autenticato prima di richiedere gli ordini
+      if (!auth.currentUser) {
+        console.log('Nessun utente autenticato, salto la richiesta ordini');
+        return [];
+      }
       
-    } catch (err) {
-      console.error('Errore nel recupero degli ordini:', err);
-      setError(err.response?.data?.error || 'Errore nel recupero degli ordini');
+      const token = await auth.currentUser.getIdToken();
+      if (!token) return [];
+      
+      const response = await axios.get(`${API_URL}/order/my-orders`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setOrders(response.data);
+      return response.data;
+    } catch (error) {
+      // Gestisci l'errore 404 in modo appropriato
+      if (error.response?.status === 404) {
+        console.log('Nessun ordine trovato o endpoint non disponibile');
+        return [];
+      }
+      console.error("Errore nel recupero degli ordini:", error);
       return [];
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -144,13 +151,13 @@ export const OrderProvider = ({ children }) => {
     try {
       const headers = await getAuthHeaders();
       const response = await axios.put(
-        `${API_URL}/order/${orderId}/status`, 
-        { status }, 
+        `${API_URL}/order/${orderId}/status`,
+        { status },
         headers
       );
       
       // Aggiorna la lista degli ordini se l'ordine è presente
-      setOrders(prevOrders => prevOrders.map(order => 
+      setOrders(prevOrders => prevOrders.map(order =>  
         order._id === orderId ? response.data : order
       ));
       

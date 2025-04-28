@@ -1,21 +1,13 @@
 import { Form, FormControl, Button, Table } from 'react-bootstrap';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useOrder } from '../context/OrderContext';
 
 const Order = () => {
   const { orders, getOrderById, loading, error } = useOrder();
   const [orderId, setOrderId] = useState('');
-  
-  // Debug per vedere cosa sta succedendo
-  useEffect(() => {
-    console.log("Stato orders:", orders);
-    console.log("Loading:", loading);
-    console.log("Error:", error);
-  }, [orders, loading, error]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Cercando ordine con ID:", orderId);
     getOrderById(orderId);
   };
 

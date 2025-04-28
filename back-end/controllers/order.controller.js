@@ -1,5 +1,5 @@
 import Order from "../models/Order.js";
-import User from "../models/Users.js";  // Usa Users (plurale)
+import User from "../models/Users.js";
 import mongoose from "mongoose";
 
 // Ottieni tutti gli ordini (Admin)
@@ -8,30 +8,22 @@ export async function getAllOrders(req, res) {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.status(200).json(orders);
   } catch (error) {
-    console.error("Error fetching orders:", error);
     res.status(500).json({ error: "Error fetching orders" });
   }
 }
 
-// Ottieni ordini dell'utente loggato - versione robusta
+// Ottieni ordini dell'utente loggato
 export async function getUserOrders(req, res) {
   try {
-    console.log("req.user:", req.user);
     if (!req.user) {
       return res.status(401).json({ error: 'Utente non autenticato' });
     }
     
-    // MODIFICA: Usa direttamente l'_id dell'utente già presente in req.user
     const mongoUserId = req.user._id;
-    console.log("ID MongoDB dell'utente:", mongoUserId);
-    
-    // Cerca gli ordini direttamente con l'ID MongoDB
     const orders = await Order.find({ user: mongoUserId }).sort({ createdAt: -1 });
-    console.log(`Trovati ${orders.length} ordini per l'utente`);
     return res.status(200).json(orders);
     
   } catch (error) {
-    console.error("Errore completo:", error);
     res.status(500).json({ error: "Errore nel recupero degli ordini: " + error.message });
   }
 }
@@ -53,7 +45,6 @@ export async function getOrderById(req, res) {
     
     res.status(200).json(order);
   } catch (error) {
-    console.error("Error fetching order:", error);
     res.status(500).json({ error: "Error fetching order" });
   }
 }
@@ -74,12 +65,10 @@ export async function getPublicOrder(req, res) {
       status: order.status,
       createdAt: order.createdAt,
       totalAmount: order.totalAmount
-      
     };
     
     res.status(200).json(publicOrder);
   } catch (error) {
-    console.error("Error fetching public order:", error);
     res.status(500).json({ error: "Error fetching order" });
   }
 }
@@ -102,7 +91,7 @@ export async function findOrderById(req, res) {
     
     // Restituisci solo informazioni non sensibili
     const publicOrder = {
-      _id: order._id,  // ✓ Qui è presente
+      _id: order._id,
       items: order.items,
       status: order.status,
       createdAt: order.createdAt,
@@ -111,7 +100,6 @@ export async function findOrderById(req, res) {
     
     res.status(200).json(publicOrder);
   } catch (error) {
-    console.error("Errore ricerca ordine:", error);
     res.status(500).json({ error: "Errore durante la ricerca dell'ordine" });
   }
 }
@@ -135,7 +123,6 @@ export async function getRecentOrders(req, res) {
     
     res.status(200).json(publicOrders);
   } catch (error) {
-    console.error("Errore nel recupero ordini recenti:", error);
     res.status(500).json({ error: "Errore nel recupero degli ordini" });
   }
 }
@@ -168,7 +155,6 @@ export async function updateOrderStatus(req, res) {
     
     res.status(200).json(order);
   } catch (error) {
-    console.error("Error updating order status:", error);
     res.status(500).json({ error: "Error updating order status" });
   }
 }
@@ -185,7 +171,6 @@ export async function deleteOrder(req, res) {
     
     res.status(200).json({ message: "Order deleted successfully" });
   } catch (error) {
-    console.error("Error deleting order:", error);
     res.status(500).json({ error: "Error deleting order" });
   }
 }

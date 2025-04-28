@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react'; // Aggiungi useRef
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Toast, ToastContainer } from 'react-bootstrap';
 import { useLocation } from 'react-router-dom';
 import { useDesign } from '../context/DesignContext';
 import ProductList from '../components/ProductList';
 import { useOrder } from '../context/OrderContext';
+import Footer from '../components/Footer';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
   const location = useLocation();
@@ -17,6 +19,7 @@ const Home = () => {
   const isMounted = useRef(true);
   
   const { getUserOrders } = useOrder();
+  const { currentUser } = useAuth();
   
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
   const [userEmail, setUserEmail] = useState('');
@@ -30,91 +33,86 @@ const Home = () => {
   
   // Toast di benvenuto
   useEffect(() => {
-    if (localStorage.getItem('registrationSuccess') === 'true') {
-      setUserEmail(localStorage.getItem('userEmail') || '');
+    // Verifica se c'è un utente appena loggato
+    if (currentUser && location.state?.fromLogin) {
+      setUserEmail(currentUser.email);
       setShowWelcomeToast(true);
       
-      // Pulisci i flag dopo averli letti
-      localStorage.removeItem('registrationSuccess');
-      localStorage.removeItem('userEmail');
+      // Carica ordini dell'utente
+      getUserOrders();
     }
-  }, []);
-  
-  // Caricamento ordini con protezione
-  useEffect(() => {
-    // Protezione per evitare chiamate API inutili
-    if (!getUserOrders) return;
-    
-    const loadData = async () => {
-      try {
-        if (!isMounted.current) return;
-        
-        // Ritardo solo all'inizio per dare tempo all'autenticazione
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        if (!isMounted.current) return;
-        
-        // Recupera ordini in modo sicuro
-        getUserOrders().catch(err => {
-          console.log("Errore recupero ordini (gestito):", err);
-        });
-      } catch (error) {
-        console.log("Errore generico (gestito):", error);
-      }
-    };
-    
-    loadData();
-  }, [getUserOrders]);
-  
+  }, [currentUser, location.state, getUserOrders]);
+
   return (
     <>
+      {/* Hero section con immagine frontale */}
+      <div 
+        className="hero-section position-relative" 
+        style={{
+          backgroundImage: frontImage ? `url(${frontImage})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          height: '70vh', // Aumentato per dare più spazio
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        {/* Overlay scuro */}
+        <div 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)' // Overlay più scuro per miglior contrasto
+          }}
+        ></div>
+        
+        {/* Contenuto centrato */}
+        <div className="container position-relative text-center">
+          <div className="mx-auto" style={{ maxWidth: '800px' }}>
+            <h1 className="display-3 fw-bold text-white mb-4">
+              Benvenuto nel nostro negozio
+            </h1>
+            <p className="lead text-white fs-4 mb-5">
+              Scopri i nostri prodotti di qualità
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Lista prodotti */}
       <Container className="py-5">
-        {/* Hero Banner - visibile solo se non c'è una ricerca attiva */}
-        {!searchQuery && (
-          <div 
-            className="jumbotron text-center my-5 rounded-3 d-flex flex-column justify-content-center"
-            style={{
-              backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${frontImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              height: '550px',
-              color: 'white',
-            }}
-          >
-            <h1 className="display-4 fw-bold mb-4">Benvenuto su Itoko</h1>
-            <p className="lead mb-4">Scopri la nostra collezione di prodotti unici e di alta qualità</p>
-          </div>
-        )}
-
-        {/* Titolo dei risultati di ricerca - visibile solo durante la ricerca */}
-        {searchQuery && (
-          <div className="mt-5 mb-4">
-            <h2>Risultati per: <span className="text-primary">"{searchQuery}"</span></h2>
-          </div>
-        )}
-
-        {/* Sezione Prodotti */}
-        <section className="my-5">
-          <ProductList searchQuery={searchQuery} maxProducts={searchQuery ? 0 : 8} />
-        </section>
+        <h2 className="text-center mb-4">
+          {searchQuery 
+            ? `Risultati per: "${searchQuery}"` 
+            : "I nostri prodotti"
+          }
+        </h2>
+        <ProductList searchQuery={searchQuery} />
       </Container>
 
       {/* Toast di benvenuto */}
       <ToastContainer position="top-end" className="p-3">
         <Toast 
+          onClose={() => setShowWelcomeToast(false)} 
           show={showWelcomeToast} 
-          onClose={() => setShowWelcomeToast(false)}
-          delay={5000}
+          delay={3000} 
           autohide
+          bg="success"
         >
           <Toast.Header>
-            <strong className="me-auto">Benvenuto in ItokoNoLab!</strong>
+            <strong className="me-auto">Benvenuto</strong>
           </Toast.Header>
-          <Toast.Body>
-            Registrazione completata con successo{userEmail ? ` per ${userEmail}` : ''}!
+          <Toast.Body className="text-white">
+            Bentornato, {userEmail}!
           </Toast.Body>
         </Toast>
       </ToastContainer>
+
+      <Footer />
     </>
   );
 };

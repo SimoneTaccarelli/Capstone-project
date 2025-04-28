@@ -13,7 +13,6 @@ const ModifyProduct = ({ product, show, handleClose }) => {
   const { currentUser } = useAuth();
   const { updateProduct } = useProducts();
 
-  // Aggiungi questi stati
   const [currentImages, setCurrentImages] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [newImages, setNewImages] = useState([]);
@@ -79,7 +78,6 @@ const ModifyProduct = ({ product, show, handleClose }) => {
       // Prepara i dati da inviare
       const formData = new FormData();
       
-      // Aggiungi tutti i campi del form
       formData.append('name', formValues.name);
       formData.append('price', formValues.price.toString());  // Assicurati che sia una stringa
       formData.append('description', formValues.description);
@@ -94,8 +92,6 @@ const ModifyProduct = ({ product, show, handleClose }) => {
         formData.append('images', file);  // Assicurati che questo nome corrisponda a ciò che il backend si aspetta
       });
       
-      console.log('Current images before sending:', currentImages);
-      
       // Effettua la chiamata PUT
       const response = await axios.put(
         `${API_URL}/product/${product._id}`,
@@ -108,15 +104,11 @@ const ModifyProduct = ({ product, show, handleClose }) => {
         }
       );
       
-      // Debug della risposta
-      console.log('Response from server:', response.data);
-      
       // Aggiorna lo stato nel ProductContext
       updateProduct(response.data);
       handleClose();
     } catch (err) {
       setError('Errore durante la modifica del prodotto: ' + (err.response?.data?.error || err.message));
-      console.error('Error details:', err);
     } finally {
       setLoading(false);
     }
@@ -181,7 +173,6 @@ const ModifyProduct = ({ product, show, handleClose }) => {
             />
           </Form.Group>
 
-          {/* Aggiungi questa sezione nel form */}
           <Form.Group className="mb-4">
             <Form.Label>Immagini attuali</Form.Label>
             <div className="d-flex flex-wrap gap-2 mb-3">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import { useProducts } from '../context/ProductContext';
@@ -6,7 +6,6 @@ import { ModalBody } from 'react-bootstrap';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import InfoCheckout from './InfoCheckout';
-// Aggiungi questi import
 import { loadStripe } from '@stripe/stripe-js';
 import { API_URL } from '../config/config';
 import { STRIPE_API_KEY } from '../config/stripeConfig';
@@ -88,7 +87,6 @@ function Cart() {
             }
         } catch (err) {
             setError(err.message || 'Si è verificato un errore');
-            console.error('Checkout error:', err);
         } finally {
             setLoading(false);
         }
@@ -109,11 +107,29 @@ function Cart() {
                 className="position-relative ms-2"
                 onClick={handleShow}
             >
-                <i className="bi bi-cart"></i>   
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    {itemCount}
-                    <span className="visually-hidden">unread messages</span>
-                </span>
+                <i className="bi bi-cart"></i>
+                
+                {/* Implementazione badge semplificata e robusta */}
+                {(() => {
+                    // Calcola direttamente dal localStorage per essere sicuri
+                    const localCount = (() => {
+                        try {
+                            const items = JSON.parse(localStorage.getItem('cartItems') || '[]');
+                            return items.reduce((total, item) => total + (item.quantity || 0), 0);
+                        } catch (e) {
+                            return 0;
+                        }
+                    })();
+                    
+                    // Usa il massimo tra itemCount e localCount per sicurezza
+                    const displayCount = Math.max(itemCount || 0, localCount || 0);
+                    
+                    return displayCount > 0 ? (
+                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {displayCount}
+                        </span>
+                    ) : null;
+                })()}
             </Button>
 
             {/* Modal del carrello */}

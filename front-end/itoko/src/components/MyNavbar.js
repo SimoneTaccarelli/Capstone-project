@@ -7,7 +7,6 @@ import Cart from '../modal/Cart.js';
 import { useDesign } from '../context/DesignContext';
 import { useOrder } from '../context/OrderContext.js';
 
-
 function MyNavbar() {
   const { logout, userData, currentUser } = useAuth();
   const isAdmin = userData && userData.role === "Admin";
@@ -22,8 +21,7 @@ function MyNavbar() {
       try {
         await getUserOrders();
       } catch (error) {
-
-        console.error("Errore durante il recupero degli ordini:", error);
+        // Gestione errore silenziosa
       }
     }
   };
@@ -36,21 +34,21 @@ function MyNavbar() {
     }
   };
 
-  // Funzioni per navigare alle diverse sezioni
+  // Funzioni di navigazione
   const goToProfile = () => {
     navigate('/profile');
   };
 
   const goToOrders = () => {
     navigate('/ordersUser');
-    fetchUserOrders(); // Recupera gli ordini quando si accede alla pagina
+    fetchUserOrders();
   };
 
   const handleLogout = async () => {
     try {
       await logout();
     } catch (error) {
-      console.error("Errore durante il logout:", error);
+      // Gestione errore silenziosa
     }
   };
 
@@ -76,13 +74,12 @@ function MyNavbar() {
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/">Home</Nav.Link>
             <Nav.Link as={Link} to="/products">Prodotti</Nav.Link>
-            <Nav.Link as={Link} to="/about">Chi Siamo</Nav.Link>
             {isAdmin && (
               <Nav.Link as={Link} to="/administrator">Amministrazione</Nav.Link>
             )}
           </Nav>
           
-          {/* CORRETTO: Layout flessibile adattivo desktop/mobile */}
+          {/* Layout responsive per desktop/mobile */}
           <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-2">
             {/* Barra di ricerca */}
             <Form className="d-flex" onSubmit={handleSearch}>

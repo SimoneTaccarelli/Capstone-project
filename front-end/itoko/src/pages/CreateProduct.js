@@ -4,12 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { API_URL } from "../config/config";
-import CloudImage from "../modal/CloudImage.js";
 import { useProducts } from "../context/ProductContext";
 
 /**
  * Componente per creare un nuovo prodotto nell'e-commerce
- * Permette l'inserimento di dati testuali e immagini (sia tramite upload diretto che da Cloudinary)
+ * Permette l'inserimento di dati testuali e immagini
  */
 const CreateProduct = () => {
     // Recupera dati utente e funzionalità di navigazione
@@ -24,43 +23,55 @@ const CreateProduct = () => {
     const [productCategory, setProductCategory] = useState("");
     const [productStock, setProductStock] = useState("");
     
-    // Stati per gestire immagini e anteprime
+    // Stati per gestire immagini e anteprime (simile a ModifyProduct)
     const [productImages, setProductImages] = useState([]);
-    const [productImagePreviews, setProductImagePreviews] = useState([]);
+    const [imagePreview, setImagePreview] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState(null);
     
     // Verifica se l'utente è amministratore
     const isAdmin = userData && userData.role === "Admin";
 
-    const handleImageChange = (filesOrEvent) => {
-        // Caso 1: Input file standard da form
-        if (filesOrEvent.target && filesOrEvent.target.files) {
-            const files = Array.from(filesOrEvent.target.files);
-            setProductImages(files);
-            const previews = files.map(file => URL.createObjectURL(file));
-            setProductImagePreviews(previews);
-        }
-        // Caso 2: Array di immagini da CloudImage
-        else if (Array.isArray(filesOrEvent)) {
-            setProductImages(filesOrEvent);
-            setProductImagePreviews(filesOrEvent.map(file => file.url));
-        }
-        // Caso 3: Singola immagine da CloudImage (retrocompatibilità)
-        else if (filesOrEvent.url) {
-            setProductImages([filesOrEvent]);
-            setProductImagePreviews([filesOrEvent.url]);
-        }
+    // Gestione nuove immagini (simile a handleNewImages in ModifyProduct)
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        setProductImages([...productImages, ...files]);
+        
+        // Crea URL per le anteprime
+        const newPreviews = files.map(file => URL.createObjectURL(file));
+        setImagePreview([...imagePreview, ...newPreviews]);
+    };
+
+    // Rimuovi nuova immagine (simile a removeNewImage in ModifyProduct)
+    const removeImage = (index) => {
+        const updatedImages = [...productImages];
+        updatedImages.splice(index, 1);
+        setProductImages(updatedImages);
+        
+        const updatedPreviews = [...imagePreview];
+        URL.revokeObjectURL(updatedPreviews[index]); // Libera memoria
+        updatedPreviews.splice(index, 1);
+        setImagePreview(updatedPreviews);
     };
 
     /**
      * Gestisce la creazione di un nuovo prodotto
      * @param {Event} e - Evento submit del form
      */
-    const CreateProduct = async (e) => {
+    const handleCreateProduct = async (e) => {
         e.preventDefault();
         
         // Verifica permessi amministratore prima di procedere
-        if (!isAdmin) return;
+        if (!isAdmin) {
+            setError("Solo gli amministratori possono creare prodotti");
+            return;
+        }
+        
+        // Verifica che ci siano immagini
+        if (productImages.length === 0) {
+            setError("È necessario caricare almeno un'immagine per il prodotto");
+            return;
+        }
         
         // Prepara i dati del form da inviare al server
         const formData = new FormData();
@@ -70,16 +81,15 @@ const CreateProduct = () => {
         formData.append("category", productCategory);
         formData.append("stock", productStock);
 
-        // Gestione delle immagini in base alla loro origine
-        if (productImages.length > 0) {
-            // Mantieni solo la parte relativa a Cloudinary
-            formData.append("cloudinaryUrls", JSON.stringify(
-                productImages.map(img => img.url)
-            ));
-        }
+        // Aggiungi le immagini alla FormData
+        productImages.forEach(file => {
+            formData.append("images", file);
+        });
 
         try {
             setIsSubmitting(true);
+            setError(null);
+            
             // Ottieni token di autenticazione da Firebase
             const token = await currentUser.getIdToken();
             
@@ -95,8 +105,8 @@ const CreateProduct = () => {
             
             // Naviga alla pagina amministratore dopo il successo
             navigate("/administrator");
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            setError("Errore durante la creazione del prodotto: " + (err.response?.data?.error || err.message));
         } finally {
             setIsSubmitting(false);
         }
@@ -107,7 +117,9 @@ const CreateProduct = () => {
             <div className="bg-light p-4 rounded-3 shadow-sm mb-4">
                 <h2 className="text-center mb-4">Aggiungi Nuovo Prodotto</h2>
                 
-                <Form onSubmit={CreateProduct}>
+                {error && <div className="alert alert-danger">{error}</div>}
+                
+                <Form onSubmit={handleCreateProduct}>
                     <Row className="g-4">
                         {/* Colonna sinistra - primi 3 input */}
                         <Col md={6}>
@@ -173,33 +185,40 @@ const CreateProduct = () => {
                             
                             <Form.Group controlId="productImages" className="mb-3">
                                 <Form.Label>Immagini Prodotto</Form.Label>
-                                <div className="py-2">
-                                    <CloudImage
-                                        handleImageChange={handleImageChange} 
-                                    />
-                                </div>
+                                <Form.Control 
+                                    type="file" 
+                                    multiple 
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                />
                             </Form.Group>
                         </Col>
                     </Row>
                     
-                    {/* Visualizzazione delle immagini in riga */}
-                    {productImagePreviews.length > 0 && (
+                    {/* Visualizzazione delle immagini in griglia (simile a ModifyProduct) */}
+                    {imagePreview.length > 0 && (
                         <div className="mt-4">
                             <h5 className="mb-3">Anteprima Immagini</h5>
-                            <Row className="g-2">
-                                {productImagePreviews.map((preview, index) => (
-                                    <Col key={index} xs={6} sm={4} md={3} lg={2}>
-                                        <div className="position-relative">
-                                            <img 
-                                                src={preview} 
-                                                alt={`Preview ${index + 1}`}
-                                                className="img-thumbnail w-100 object-fit-cover"
-                                                style={{height: '150px'}}
-                                            />
-                                        </div>
-                                    </Col>
+                            <div className="d-flex flex-wrap gap-3">
+                                {imagePreview.map((preview, index) => (
+                                    <div key={index} className="position-relative" style={{width: '100px'}}>
+                                        <img 
+                                            src={preview} 
+                                            alt={`Anteprima ${index + 1}`}
+                                            className="img-thumbnail" 
+                                            style={{width: '100px', height: '100px', objectFit: 'cover'}}
+                                        />
+                                        <Button 
+                                            variant="danger" 
+                                            size="sm" 
+                                            className="position-absolute top-0 end-0"
+                                            onClick={() => removeImage(index)}
+                                        >
+                                            <i className="bi bi-x"></i>
+                                        </Button>
+                                    </div>
                                 ))}
-                            </Row>
+                            </div>
                         </div>
                     )}
                     
@@ -212,7 +231,12 @@ const CreateProduct = () => {
                             className="px-5"
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? "Creazione in corso..." : "Crea Prodotto"}
+                            {isSubmitting ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    Creazione in corso...
+                                </>
+                            ) : "Crea Prodotto"}
                         </Button>
                     </div>
                 </Form>

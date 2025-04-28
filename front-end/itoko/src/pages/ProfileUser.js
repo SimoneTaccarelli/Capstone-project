@@ -1,9 +1,12 @@
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
-import { Button, Form, Container, Row, Col, Image, Card, Spinner } from 'react-bootstrap';
+import { Button, Form, Container, Row, Col, Card, Spinner } from 'react-bootstrap';
+import ProfileImage from '../components/ProfileImage';
 
 const ProfileUser = () => {
   const { userData, updateUserProfile, deleteUserAccount } = useAuth();
+
+  const defaultAvatar = `https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${userData?.firstName || 'U'}+${userData?.lastName || 'N'}`;
   
   const [newAvatar, setNewAvatar] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -30,51 +33,58 @@ const ProfileUser = () => {
     }
   }, [userData]);
 
-  useEffect(() => {
-    // Ascolta eventi di aggiornamento avatar
-    const handleAvatarUpdate = () => {
-      // Forza aggiornamento se l'avatar è stato modificato altrove
-      if (userData?.profilePic) {
-        // Reset stati locali per mostrare l'immagine aggiornata dal server
-        setPreviewUrl(null);
-        setNewAvatar(null);
-      }
-    };
-    
-    window.addEventListener('avatarUpdated', handleAvatarUpdate);
-    
-    return () => {
-      window.removeEventListener('avatarUpdated', handleAvatarUpdate);
-    };
-  }, [userData]);
-
-  // Gestisci la selezione dell'immagine e crea l'anteprima
+  // Gestione del cambio immagine profilo
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Verifica dimensione (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        setAvatarError('L\'immagine è troppo grande. Dimensione massima: 2MB');
-        return;
+    
+    // Reset degli stati precedenti
+    setAvatarError('');
+    setAvatarSuccess(false);
+    
+    if (!file) {
+      setNewAvatar(null);
+      setPreviewUrl(null);
+      return;
+    }
+    
+    // Imposta il file per l'upload
+    setNewAvatar(file);
+    
+    // Revoca eventuali URL precedenti
+    if (previewUrl && previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    
+    // Crea un nuovo URL per l'anteprima e aggiorna immediatamente
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+  };
+
+  // Salvataggio dell'immagine profilo
+  const handleSubmitAvatar = async () => {
+    if (!newAvatar) return;
+    
+    setAvatarLoading(true);
+    setAvatarError('');
+    setAvatarSuccess(false);
+    
+    try {
+      // Rimuovi l'anteprima
+      setPreviewUrl(null);
+      
+      // Aggiorna l'immagine del profilo
+      const result = await updateUserProfile({ imageFile: newAvatar });
+      
+      if (result && result.success) {
+        setAvatarSuccess(true);
+        setNewAvatar(null);
+      } else {
+        setAvatarError(`Errore: ${result?.error || 'Si è verificato un errore'}`);
       }
-      
-      // Verifica tipo di file (solo immagini)
-      if (!file.type.match('image.*')) {
-        setAvatarError('Seleziona un\'immagine valida');
-        return;
-      }
-      
-      setNewAvatar(file);
-      
-      // Crea un'anteprima dell'immagine
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-      
-      setAvatarError('');
-      setAvatarSuccess(false);
+    } catch (error) {
+      setAvatarError(`Errore: ${error.message || 'Si è verificato un errore'}`);
+    } finally {
+      setAvatarLoading(false);
     }
   };
 
@@ -88,41 +98,6 @@ const ProfileUser = () => {
     setNewSurname(e.target.value);
     setNameError('');
     setNameSuccess(false);
-  };
-
-  // Gestione aggiornamento avatar
-  const handleSubmitAvatar = async () => {
-    if (!newAvatar) return;
-    
-    setAvatarLoading(true);
-    setAvatarError('');
-    setAvatarSuccess(false);
-    
-    try {
-      // Usa la funzione unificata passando solo l'imageFile
-      const result = await updateUserProfile({ imageFile: newAvatar });
-      
-      if (result && result.success) {
-        setAvatarSuccess(true);
-        console.log("Immagine caricata con successo:", result);
-        
-        // Pulizia dell'anteprima dopo il caricamento
-        setTimeout(() => {
-          setNewAvatar(null);
-          setPreviewUrl(null);
-        }, 2000);
-        
-        // Forza aggiornamento dell'immagine in tutta l'app
-        window.dispatchEvent(new Event('avatarUpdated'));
-      } else {
-        setAvatarError(`Errore: ${result?.error || 'Si è verificato un errore durante il caricamento'}`);
-      }
-    } catch (error) {
-      console.error("Errore durante il caricamento dell'avatar:", error);
-      setAvatarError(`Errore: ${error.message || 'Si è verificato un errore durante il caricamento'}`);
-    } finally {
-      setAvatarLoading(false);
-    }
   };
 
   // Gestione aggiornamento nome e cognome
@@ -168,50 +143,56 @@ const ProfileUser = () => {
         <Col md={4}>
           <Card className="mb-4">
             <Card.Body className="text-center">
-              {/* Mostra l'anteprima se disponibile, altrimenti l'immagine attuale */}
-              <Image 
-                src={previewUrl || (userData?.profilePic ? `${userData.profilePic}?t=${new Date().getTime()}` : 'https://via.placeholder.com/150')} 
-                roundedCircle 
-                width="150" 
-                height="150" 
-                className="mb-3"
-                style={{ objectFit: 'cover' }}
-              />
+              <div className="position-relative mb-3">
+                <img
+                  src={previewUrl || (userData?.profilePic ? userData.profilePic : defaultAvatar)}
+                  alt="Profilo"
+                  className="rounded-circle mb-3"
+                  style={{
+                    width: "150px",
+                    height: "150px",
+                    objectFit: "cover"
+                  }}
+                />
+                
+                {previewUrl && (
+                  <div className="position-absolute top-0 end-0 badge bg-primary"
+                       style={{ transform: 'translate(25%, -25%)' }}>
+                    Anteprima
+                  </div>
+                )}
+              </div>
               
+              {/* Form per caricare l'immagine */}
               <Form.Group className="mb-3">
-                <Form.Label>Cambia immagine profilo</Form.Label>
-                <Form.Control 
-                  type="file" 
+                <Form.Label htmlFor="profile-image">Immagine profilo</Form.Label>
+                <Form.Control
+                  id="profile-image"
+                  type="file"
                   accept="image/*"
                   onChange={handleAvatarChange}
-                  isInvalid={!!avatarError}
+                  disabled={avatarLoading}
                 />
-                {avatarError && <div className="text-danger small mt-1">{avatarError}</div>}
-                {avatarSuccess && <div className="text-success small mt-1">Immagine aggiornata!</div>}
+                {avatarError && <p className="text-danger small mt-1">{avatarError}</p>}
+                {avatarSuccess && <p className="text-success small mt-1">Immagine caricata con successo</p>}
               </Form.Group>
               
-              <Button 
-                variant="primary" 
-                onClick={handleSubmitAvatar}
-                disabled={!newAvatar || avatarLoading}
-                className="w-100"
-              >
-                {avatarLoading ? (
-                  <>
-                    <Spinner 
-                      as="span" 
-                      animation="border" 
-                      size="sm" 
-                      role="status" 
-                      aria-hidden="true" 
-                      className="me-2"
-                    />
-                    Caricamento...
-                  </>
-                ) : (
-                  'Aggiorna immagine'
-                )}
-              </Button>
+              {previewUrl && (
+                <Button 
+                  variant="primary" 
+                  onClick={handleSubmitAvatar} 
+                  disabled={avatarLoading}
+                  className="mb-3"
+                >
+                  {avatarLoading ? (
+                    <>
+                      <Spinner animation="border" size="sm" /> Caricamento...
+                    </>
+                  ) : (
+                    "Salva immagine"
+                  )}
+                </Button>
+              )}
             </Card.Body>
           </Card>
         </Col>

@@ -69,7 +69,6 @@ const Register = () => {
                 setError(result?.error || 'Errore durante la registrazione');
             }
         } catch (error) {
-            console.error("Errore durante la registrazione:", error);
             setSuccess(false);
             setError('Errore durante la registrazione');
         } finally {

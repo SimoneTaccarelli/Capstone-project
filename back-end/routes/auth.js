@@ -5,7 +5,7 @@ import { avatarUpload } from "../utilities/cloudinary.js";
 const router = Router()
 
 
-router.post("/auth/register",userController.freshRegister , userController.welcomeEmail);
+router.post("/auth/register",userController.freshRegister );
 router.get("/auth/me", userController.verifyToken, userController.getUserData);
 router.post("/auth/login", userController.login );
 router.post("/auth/login-google", userController.loginGoogle);

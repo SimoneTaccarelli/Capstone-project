@@ -13,60 +13,39 @@ import { auth } from '../firebase/config';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
-
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
+  // Stati principali
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Funzioni di utilità
   const getCurrentToken = async () => {
     if (!currentUser) throw new Error('Nessun utente autenticato');
     return await currentUser.getIdToken();
   };
 
-  const getCurrentUser = async () => {
+  const fetchUserData = async (token) => {
     try {
-      // Verifica se l'utente è autenticato prima di fare la richiesta
-      if (!auth.currentUser) {
-        console.log('Nessun utente autenticato, salto la richiesta /auth/me');
-        return null;
-      }
-      
-      // Ottieni il token con un breve ritardo per assicurarsi che sia valido
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const token = await auth.currentUser.getIdToken(true);
-      
-      if (!token) {
-        console.log('Nessun token disponibile');
-        return null;
-      }
-      
       const response = await axios.get(`${API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
       return response.data;
     } catch (error) {
-      // Gestisci l'errore 404 in modo più silenzioso
-      if (error.response?.status === 404) {
-        console.log('Utente non trovato nel database, possibile nuova registrazione');
-        return null;
-      }
-      console.error("Errore durante il recupero dei dati utente:", error);
       return null;
     }
   };
 
+  // Autenticazione
   const login = async (email, password) => {
     try {
       return await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
-      console.error("Errore durante il login:", error);
       throw error;
     }
   };
@@ -80,20 +59,19 @@ export const AuthProvider = ({ children }) => {
       try {
         const backendResponse = await axios.post(`${API_URL}/auth/login-google`, { token });
         setUserData(backendResponse.data);
-      } catch (backendError) {
-        console.error("Errore sincronizzazione con MongoDB:", backendError);
-        alert("Errore durante la sincronizzazione dell'account. Riprova.");
+      } catch (error) {
+        // Errore gestito silenziosamente
       }
       
       return result;
     } catch (error) {
-      console.error("Errore durante il login con Google:", error);
       throw error;
     }
   };
 
   const logout = () => signOut(auth);
 
+  // Gestione profilo utente
   const updateUserProfile = async (data = {}) => {
     try {
       const token = await getCurrentToken();
@@ -107,7 +85,8 @@ export const AuthProvider = ({ children }) => {
         if (lastName) formData.append('lastName', lastName);
         formData.append('profilePic', imageFile);
         
-        const response = await axios.put(`${API_URL}/auth/modifyUser`, 
+        const response = await axios.put(
+          `${API_URL}/auth/modifyUser`, 
           formData,
           { 
             headers: { 
@@ -117,42 +96,56 @@ export const AuthProvider = ({ children }) => {
           }
         );
         
-        if (response.data && response.data.success) {
+        // Aggiungi un delay prima di aggiornare lo stato
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (response.data?.success) {
           const imageUrl = response.data.user?.profilePic || response.data.profilePic;
           
-          const updatedUserData = {...userData};
-          if (firstName) updatedUserData.firstName = firstName;
-          if (lastName) updatedUserData.lastName = lastName;
-          if (imageUrl) updatedUserData.profilePic = imageUrl;
+          setUserData(prevData => {
+            if (!prevData) return prevData; // Gestisci il caso di componente smontato
+            
+            return {
+              ...prevData,
+              ...(firstName && { firstName }),
+              ...(lastName && { lastName }),
+              ...(imageUrl && { profilePic: imageUrl })
+            };
+          });
           
-          setUserData(updatedUserData);
-          
-          return { success: true, url: imageUrl, user: updatedUserData };
+          return { success: true, url: imageUrl };
         }
         
-        return { success: false, error: 'Errore nell\'aggiornamento del profilo' };
+        return { success: false, error: 'Errore aggiornamento profilo' };
       } 
       else if (firstName || lastName) {
-        const response = await axios.put(`${API_URL}/auth/modifyUser`, 
+        const response = await axios.put(
+          `${API_URL}/auth/modifyUser`, 
           { firstName, lastName },
           { headers: { Authorization: `Bearer ${token}` }}
         );
         
-        setUserData(prev => ({
-          ...prev,
-          ...(firstName && { firstName }),
-          ...(lastName && { lastName })
-        }));
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        setUserData(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            ...(firstName && { firstName }),
+            ...(lastName && { lastName })
+          };
+        });
         
         return response.data;
       }
       
       return { success: false, error: 'Nessun dato da aggiornare' };
     } catch (error) {
-      console.error('Errore durante l\'aggiornamento del profilo:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: 'Errore durante l\'aggiornamento del profilo' };
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 300);
     }
   };
 
@@ -165,97 +158,68 @@ export const AuthProvider = ({ children }) => {
       await logout();
       return { success: true, message: 'Account eliminato con successo' };
     } catch (error) {
-      console.error('Errore durante l\'eliminazione dell\'account:', error);
       throw error;
     }
   };
 
+  // Registrazione utente
   const register = async (email, password, firstName, lastName) => {
     try {
       setLoading(true);
       setError("");
       
-      console.log("1. Iniziando registrazione Firebase per:", email);
-      
-      // 1. Verifica se l'utente esiste già
+      // 1. Verifica email disponibile
       try {
         const methods = await fetchSignInMethodsForEmail(auth, email);
-        if (methods && methods.length > 0) {
-          throw new Error("Questa email è già registrata");
+        if (methods?.length > 0) {
+          setError("Questa email è già registrata");
+          return { success: false, error: "Questa email è già registrata" };
         }
-      } catch (emailCheckError) {
-        if (emailCheckError.message !== "Questa email è già registrata") {
-          console.log("Errore verifica email:", emailCheckError);
-        } else {
-          throw emailCheckError;
+      } catch (error) {
+        if (error.code === 'auth/email-already-in-use' || 
+            error.message.includes("email-already-in-use")) {
+          setError("Questa email è già registrata");
+          return { success: false, error: "Questa email è già registrata" };
         }
       }
       
-      // 2. Crea l'utente in Firebase
+      // 2. Crea utente Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      console.log("2. Utente Firebase creato:", user.uid);
-      
-      // 3. Aggiorna il profilo in Firebase
+      // 3. Aggiorna profilo Firebase
       await updateProfile(user, {
         displayName: `${firstName} ${lastName}`
       });
       
-      // 4. Ottieni il token
+      // 4. Ottieni token
       const token = await user.getIdToken();
       
-      console.log("3. Token ottenuto, inoltrando al backend");
-      
-      // 5. Verifica connessione al backend
+      // 5. Registra nel backend
       try {
-        // Prima fai una richiesta di ping per verificare che il backend sia accessibile
-        await axios.get(`${API_URL}/ping`);
-      } catch (pingError) {
-        console.log("Backend non raggiungibile:", pingError);
-        // Non bloccare la registrazione, continuiamo comunque
-      }
-      
-      try {
-        // 6. Invia i dati al backend
         const response = await axios.post(`${API_URL}/auth/register`, {
-          firstName, 
-          lastName, 
-          email,
-          firebaseUid: user.uid
+          firstName, lastName, email, firebaseUid: user.uid
         }, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        console.log("4. Risposta dal backend:", response.data);
         return { success: true, user: response.data };
-      } catch (backendError) {
-        console.log("Errore dal backend ma utente Firebase creato:", backendError);
-        // Non bloccare la registrazione, l'utente Firebase esiste
+      } catch (error) {
         return { 
           success: true, 
-          warning: "Utente creato in Firebase ma ci sono stati problemi con il backend. Alcune funzionalità potrebbero non essere disponibili.",
-          user: {
-            email,
-            firstName,
-            lastName,
-            firebaseUid: user.uid
-          }
+          warning: "Utente creato ma sincronizzazione non completata",
+          user: { email, firstName, lastName, firebaseUid: user.uid }
         };
       }
     } catch (error) {
-      console.error("Errore completo:", error);
-      
-      // Se l'utente è stato creato in Firebase ma c'è stato un errore successivo
-      // non eliminarlo, teniamo l'account
-      
       setError(error.message);
-      return { success: false, error: error.message };
+      return { success: false, error: "Errore durante la registrazione" };
     } finally {
       setLoading(false);
     }
   };
 
+  // Monitora autenticazione
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
@@ -267,15 +231,17 @@ export const AuthProvider = ({ children }) => {
       }
       
       try {
-        const token = await user.getIdToken();
-        const response = await axios.get(`${API_URL}/auth/me`, { 
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (response.data) setUserData(response.data);
-      } catch (error) {
-        console.error("Errore durante il recupero dei dati utente:", error);
-      } finally {
+        // Richiedi token dopo 500ms per garantire che sia valido
+        setTimeout(async () => {
+          try {
+            const token = await user.getIdToken();
+            const data = await fetchUserData(token);
+            if (data) setUserData(data);
+          } finally {
+            setLoading(false);
+          }
+        }, 500);
+      } catch {
         setLoading(false);
       }
     });
@@ -283,7 +249,7 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-const avatarUrl =`https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${userData?.firstName}+${userData?.lastName}`;
+  const avatarUrl = `https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${userData?.firstName || 'U'}+${userData?.lastName || 'N'}`;
 
   return (
     <AuthContext.Provider value={{
@@ -297,7 +263,8 @@ const avatarUrl =`https://ui-avatars.com/api/?background=8c00ff&color=fff&name=$
       avatarUrl,
       loginWithGoogle,
       updateUserProfile,
-      deleteUserAccount
+      deleteUserAccount,
+      isAdmin: userData?.role === 'admin'
     }}>
       {children}
     </AuthContext.Provider>

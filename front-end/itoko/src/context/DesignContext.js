@@ -24,7 +24,6 @@ export const DesignProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_URL}/file/design`);
-      console.log('Risposta dal server:', response.data);
       
       // La risposta ora dovrebbe essere un oggetto, non un array
       if (response.data && response.data.data) {
@@ -32,18 +31,14 @@ export const DesignProvider = ({ children }) => {
         
         if (settings.logo) {
           setLogo(settings.logo);
-          console.log('Logo impostato su:', settings.logo);
         }
         
         if (settings.frontImage) {
           setFrontImage(settings.frontImage);
-          console.log('FrontImage impostata su:', settings.frontImage);
         }
-      } else {
-        console.log('Nessun dato di design trovato nella risposta');
       }
     } catch (err) {
-      console.error('Errore nel caricamento impostazioni design:', err);
+      setError('Errore nel caricamento impostazioni design');
     } finally {
       setLoading(false);
     }
@@ -64,8 +59,6 @@ export const DesignProvider = ({ children }) => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      console.log('Risposta upload logo:', response.data);
-      
       if (response.data && response.data.success) {
         // Estrai l'URL direttamente dalla risposta in modo più robusto
         let logoUrl = null;
@@ -79,7 +72,6 @@ export const DesignProvider = ({ children }) => {
         }
         
         if (logoUrl) {
-          console.log('Impostando nuovo logo URL:', logoUrl);
           setLogo(logoUrl);
           // Forza un refresh dell'interfaccia con un piccolo ritardo
           setTimeout(() => {
@@ -90,14 +82,12 @@ export const DesignProvider = ({ children }) => {
         }
         
         // Fallback: ricarica tutte le impostazioni
-        console.log('URL logo non trovato nella risposta, ricarico tutte le impostazioni');
         await fetchDesignSettings();
         return { success: true };
       }
       
       return { success: false, error: 'Errore nel caricamento del logo' };
     } catch (err) {
-      console.error('Errore nel caricamento del logo:', err);
       setError('Impossibile caricare il logo');
       return { success: false, error: err.message };
     } finally {
@@ -133,7 +123,6 @@ export const DesignProvider = ({ children }) => {
       
       return { success: false, error: 'Errore nel caricamento dell\'immagine frontale' };
     } catch (err) {
-      console.error('Errore nel caricamento dell\'immagine frontale:', err);
       setError('Impossibile caricare l\'immagine frontale');
       return { success: false, error: err.message };
     } finally {
@@ -176,7 +165,6 @@ export const DesignProvider = ({ children }) => {
         };
       }
     } catch (err) {
-      console.error('Errore nell\'aggiornamento delle impostazioni di design:', err);
       setError('Impossibile aggiornare le impostazioni di design');
       return { success: false, error: err.message };
     } finally {
@@ -190,8 +178,8 @@ export const DesignProvider = ({ children }) => {
     frontImage,
     loading,
     error,
-    uploadLogo,           // Nuova funzione specifica
-    uploadFrontImage,     // Nuova funzione specifica
+    uploadLogo,           // Funzione specifica per il logo
+    uploadFrontImage,     // Funzione specifica per l'immagine frontale
     updateDesignSettings, // Mantiene la funzionalità esistente
     refreshDesign: fetchDesignSettings
   };

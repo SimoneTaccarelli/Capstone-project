@@ -6,16 +6,14 @@ import { useCart } from '../context/CartContext';
 const SuccessPayment = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('order_id');
-  const cartContext = useCart();
+  const { clearCart } = useCart();
 
   useEffect(() => {
-    // Verifica se clearCart esiste prima di chiamarla
-    if (cartContext && typeof cartContext.clearCart === 'function') {
-      cartContext.clearCart();
-    } else {
-      console.warn('clearCart function not available in CartContext');
+    // Pulisci il carrello dopo un pagamento riuscito
+    if (clearCart) {
+      clearCart();
     }
-  }, [cartContext]);
+  }, [clearCart]);
 
   return (
     <Container className="py-5">

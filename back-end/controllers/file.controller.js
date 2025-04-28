@@ -28,7 +28,6 @@ export const getAllFiles = async (req, res) => {
       data: files
     });
   } catch (error) {
-    console.error('Errore nel recupero delle immagini:', error);
     res.status(500).json({ 
       success: false,
       error: 'Impossibile recuperare le immagini'
@@ -49,19 +48,17 @@ export const uploadFile = async (req, res) => {
       });
     }
 
-    // Risposta con URL completo
     res.status(200).json({
       success: true,
-      url: req.file.secure_url, // Aggiungi questa riga per includere l'URL
+      url: req.file.secure_url,
       data: {
         name: req.file.originalname,
-        url: req.file.secure_url, // Includi l'URL anche qui
+        url: req.file.secure_url,
         id: req.file.public_id,
         createdAt: new Date()
       }
     });
   } catch (error) {
-    console.error('Errore nel caricamento del file:', error);
     res.status(500).json({
       success: false,
       error: 'Impossibile caricare il file'
@@ -82,7 +79,6 @@ export const eliminateFile = async (req, res) => {
       message: 'File eliminato con successo'
     });
   } catch (error) {
-    console.error('Errore nell\'eliminazione del file:', error);
     res.status(500).json({
       success: false,
       error: 'Impossibile eliminare il file'
@@ -95,7 +91,6 @@ export const eliminateFile = async (req, res) => {
  */
 export const getDesignSettings = async (req, res) => {
   try {
-    // Cerca le impostazioni nel database
     const settings = await SettingsDesign.findOne();
     
     if (!settings) {
@@ -129,13 +124,11 @@ export const uploadLogoFile = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Nessun file caricato' });
     }
     
-    // Recupera o crea impostazioni
     let settings = await SettingsDesign.findOne();
     if (!settings) {
       settings = new SettingsDesign();
     }
     
-    // Aggiorna solo il logo
     settings.logo = fileUrl;
     await settings.save();
     
@@ -145,7 +138,6 @@ export const uploadLogoFile = async (req, res) => {
       message: 'Logo aggiornato con successo' 
     });
   } catch (error) {
-    console.error('Errore nel caricamento del logo:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 
@@ -164,13 +156,11 @@ export const uploadFrontImageFile = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Nessun file caricato' });
     }
     
-    // Recupera o crea impostazioni
     let settings = await SettingsDesign.findOne();
     if (!settings) {
       settings = new SettingsDesign();
     }
     
-    // Aggiorna solo l'immagine frontale
     settings.frontImage = fileUrl;
     await settings.save();
     
@@ -180,7 +170,6 @@ export const uploadFrontImageFile = async (req, res) => {
       message: 'Immagine frontale aggiornata con successo' 
     });
   } catch (error) {
-    console.error('Errore nel caricamento dell\'immagine frontale:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 

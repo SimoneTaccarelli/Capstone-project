@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Row, Col, Button, Form, Badge } from 'react-bootstrap';
 // Importa la libreria per l'effetto lente d'ingrandimento
 import InnerImageZoom from 'react-inner-image-zoom';
-// Importa il tuo CSS personalizzato invece di quello della libreria
+// Importa il CSS personalizzato
 import '../styles/imageZoom.css';
 
 const Details = () => {

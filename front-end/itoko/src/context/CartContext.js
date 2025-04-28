@@ -1,106 +1,75 @@
-import { createContext, useContext, useEffect } from "react";
-import { useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useProducts } from "./ProductContext";
 
 const CartContext = createContext();
+const STORAGE_KEY = 'cartItems'; // Standardizza la chiave di localStorage
 
 export const CartProvider = ({ children }) => {
-    // Inizializza con array vuoto
-    const [cartItems, setCartItems] = useState([]);
-    const { products = [] } = useProducts(); // Valore predefinito
+    // Inizializza direttamente il carrello dal localStorage
+    const [cartItems, setCartItems] = useState(() => {
+        try {
+            const storedItems = localStorage.getItem(STORAGE_KEY);
+            return storedItems ? JSON.parse(storedItems) : [];
+        } catch (error) {
+            return [];
+        }
+    });
     
     // Aggiungi al carrello
-    const addToCart = (product) => {
-        // Verifica se product è un oggetto o un ID
-        const isProductId = typeof product === 'string';
-        const productId = isProductId ? product : product?._id;
-        
-        // Se è un ID, trova il prodotto completo
-        let productToAdd = isProductId 
-            ? (products || []).find(p => p._id === productId)
-            : product;
-        
-        if (!productToAdd) {
-            console.error('Prodotto non trovato:', product);
-            return;
-        }
-        
-        setCartItems((prevItems = []) => {
-            // Assicura che prevItems sia sempre un array
-            const items = Array.isArray(prevItems) ? prevItems : [];
+    const addToCart = (product, quantity = 1) => {
+        setCartItems(prevItems => {
+            const existingItemIndex = prevItems.findIndex(item => item._id === product._id);
             
-            const existingItem = items.find((item) => item._id === productToAdd._id);
-            if (existingItem) {
-                return items.map((item) =>
-                    item._id === productToAdd._id
-                        ? { ...item, quantity: (item.quantity || 0) + 1 }
-                        : item
-                );
+            let newItems;
+            if (existingItemIndex >= 0) {
+                newItems = [...prevItems];
+                newItems[existingItemIndex] = {
+                    ...newItems[existingItemIndex],
+                    quantity: newItems[existingItemIndex].quantity + quantity
+                };
             } else {
-                return [...items, { ...productToAdd, quantity: 1 }];
+                newItems = [...prevItems, { ...product, quantity }];
             }
+            
+            // Salva immediatamente nel localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+            return newItems;
         });
     };
 
     // Rimuovi dal carrello
     const removeFromCart = (productId) => {
-        setCartItems((prevItems = []) => {
-            // Assicura che prevItems sia sempre un array
-            const items = Array.isArray(prevItems) ? prevItems : [];
-            return items.filter((item) => item._id !== productId);
+        setCartItems(prevItems => {
+            const newItems = prevItems.filter(item => item._id !== productId);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+            return newItems;
         });
     };
 
     // Svuota il carrello
     const clearCart = () => {
         setCartItems([]);
-        localStorage.removeItem('cartItems');
+        localStorage.removeItem(STORAGE_KEY);
     };
 
-    // Ripristina dal localStorage all'avvio
-    useEffect(() => {
-        try {
-            const storedCartItems = localStorage.getItem("cartItems");
-            if (storedCartItems) {
-                const parsed = JSON.parse(storedCartItems);
-                setCartItems(Array.isArray(parsed) ? parsed : []);
-            }
-        } catch (error) {
-            console.error('Errore nel ripristino del carrello:', error);
-            setCartItems([]);
-        }
-    }, []);
+    // Calcola il numero degli articoli e il totale all'interno del provider
+    const itemCount = cartItems.reduce((count, item) => 
+        count + (Number(item?.quantity) || 0), 0);
 
-    // Aggiorna localStorage quando il carrello cambia
-    useEffect(() => {
-        if (Array.isArray(cartItems)) {
-            localStorage.setItem("cartItems", JSON.stringify(cartItems));
-        }
-    }, [cartItems]);
-
-    // Calcola il numero degli articoli
-    const itemCount = Array.isArray(cartItems) 
-        ? cartItems.reduce((count, item) => count + (Number(item?.quantity) || 0), 0)
-        : 0;
-
-    // Calcola il totale del carrello
-    const cartTotal = Array.isArray(cartItems)
-        ? cartItems.reduce((total, item) => {
-            const price = Number(item?.price) || 0;
-            const quantity = Number(item?.quantity) || 0;
-            return total + (price * quantity);
-        }, 0)
-        : 0;
+    const cartTotal = cartItems.reduce((total, item) => {
+        const price = Number(item?.price) || 0;
+        const quantity = Number(item?.quantity) || 0;
+        return total + (price * quantity);
+    }, 0);
     
-    // IMPORTANTE: Mantieni la stessa interfaccia di prima
     return (
         <CartContext.Provider value={{ 
-            cartItems, // Restituisci direttamente cartItems
+            cartItems,
             addToCart, 
             removeFromCart,
             clearCart,
-            itemCount,  // Esponi il conteggio degli elementi
-            cartTotal   // Esponi il totale
+            itemCount,
+            cartTotal
         }}>
             {children}
         </CartContext.Provider>

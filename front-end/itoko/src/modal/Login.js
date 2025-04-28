@@ -29,7 +29,6 @@ function Login() {
     }
     catch (error) {
       setError('Accesso fallito. Verifica le tue credenziali.');
-      console.error('Errore di login:', error.message);
     }
     finally {
       setLoading(false);
@@ -48,7 +47,6 @@ function Login() {
       handleClose();
       navigate('/');
     } catch (error) {
-      console.error('Errore login con Google:', error);
       setError('Login con Google fallito. Riprova più tardi.');
     } finally {
       setLoading(false);
@@ -114,7 +112,7 @@ function Login() {
             </Button>
 
             <p className="text-center">
-              Non hai un account? <Link to="/register">Registrati</Link>
+              Non hai un account? <Link to="/register" onClick={handleClose}>Registrati</Link>
             </p>
           </Modal.Body>
           <Modal.Footer>
@@ -128,7 +126,8 @@ function Login() {
             >
               {loading && !loginWithGoogle ? (
                 <>
-                  <Spinner animation="border" size="sm" className="me-2" />
+                  <div className='spinner '></div>
+                 
                   Accesso...
                 </>
               ) : (

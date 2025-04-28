@@ -78,7 +78,6 @@ function InfoCheckout({ show, onHide, cartItems }) {
             }
         } catch (err) {
             setError(err.message || 'Si è verificato un errore');
-            console.error('Checkout error:', err);
         } finally {
             setLoading(false);
         }

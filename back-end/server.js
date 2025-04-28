@@ -21,7 +21,9 @@ dotenv.config();
 //
 const server = express();
 server.use(express.json());
-server.use(cors())
+server.use(cors({
+  exposedHeaders: ['X-Pagination', 'Content-Type']
+}))
 server.use('/api/v1/' , authRouter)
 server.use('/api/v1' , fileRouter)
 server.use('/api/v1' , productRouter)

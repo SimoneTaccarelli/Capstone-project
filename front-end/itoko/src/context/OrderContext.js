@@ -10,7 +10,7 @@ const OrderContext = createContext();
 export const useOrder = () => useContext(OrderContext);
 
 export const OrderProvider = ({ children }) => {
-  const { currentUser, userData } = useAuth();
+  const { currentUser, userData, token } = useAuth(); // Aggiungi token qui
   const [orders, setOrders] = useState([]);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -18,7 +18,6 @@ export const OrderProvider = ({ children }) => {
 
   useEffect(() => {
     if (currentUser) {
-      console.log('OrderContext: utente autenticato, carico gli ordini');
       getUserOrders();
     }
   }, [currentUser]); // Si attiva quando l'utente effettua il login
@@ -41,7 +40,6 @@ export const OrderProvider = ({ children }) => {
     try {
       // Verifica se c'è un utente autenticato prima di richiedere gli ordini
       if (!auth.currentUser) {
-        console.log('Nessun utente autenticato, salto la richiesta ordini');
         return [];
       }
       
@@ -57,10 +55,8 @@ export const OrderProvider = ({ children }) => {
     } catch (error) {
       // Gestisci l'errore 404 in modo appropriato
       if (error.response?.status === 404) {
-        console.log('Nessun ordine trovato o endpoint non disponibile');
         return [];
       }
-      console.error("Errore nel recupero degli ordini:", error);
       return [];
     }
   };
@@ -71,9 +67,7 @@ export const OrderProvider = ({ children }) => {
     setError(null);
     
     try {
-      console.log("Cercando ordine con ID:", orderId);
       const response = await axios.get(`${API_URL}/order/public/${orderId}`);
-      console.log("Risposta dal server:", response.data);
       
       const orderData = response.data;
       
@@ -85,7 +79,6 @@ export const OrderProvider = ({ children }) => {
       
       return orderData;
     } catch (err) {
-      console.error('Errore nel recupero dell\'ordine:', err);
       setError(err.response?.data?.error || 'Errore nel recupero dell\'ordine');
       setOrders([]); // Pulisci orders in caso di errore
       return null;
@@ -104,7 +97,6 @@ export const OrderProvider = ({ children }) => {
       setCurrentOrder(response.data);
       return response.data;
     } catch (err) {
-      console.error('Errore nel recupero dell\'ordine pubblico:', err);
       setError(err.response?.data?.error || 'Errore nel recupero dell\'ordine');
       return null;
     } finally {
@@ -116,24 +108,33 @@ export const OrderProvider = ({ children }) => {
 
   // Ottieni tutti gli ordini (solo admin)
   const getAllOrders = async () => {
-    if (userData?.role !== 'Admin') {
-      setError('Accesso non autorizzato');
-      return [];
-    }
-    
-    setLoading(true);
-    setError(null);
-    
+    console.log("getAllOrders chiamata, loading:", loading);
     try {
-      const headers = await getAuthHeaders();
-      const response = await axios.get(`${API_URL}/order`, headers);
-      setOrders(response.data);
-      return response.data;
-    } catch (err) {
-      console.error('Errore nel recupero di tutti gli ordini:', err);
-      setError(err.response?.data?.error || 'Errore nel recupero degli ordini');
+      setLoading(true);
+      setError(null);
+      
+      try {
+        console.log("Tentativo di ottenere auth headers...");
+        const config = await getAuthHeaders();
+        console.log("Auth headers ottenuti:", !!config);
+        
+        console.log("Richiesta API a:", `${API_URL}/order`);
+        const response = await axios.get(`${API_URL}/order`, config);
+        console.log("Risposta API ricevuta, status:", response.status);
+        
+        setOrders(response.data);
+        return response.data;
+      } catch (authError) {
+        console.error("Errore auth in getAllOrders:", authError);
+        setError('Token di autenticazione mancante o sessione scaduta. Effettua nuovamente il login.');
+        return [];
+      }
+    } catch (error) {
+      console.error("Errore generale in getAllOrders:", error);
+      setError('Errore nel caricamento degli ordini: ' + (error.response?.data?.message || error.message));
       return [];
     } finally {
+      console.log("Setting loading to false in getAllOrders");
       setLoading(false);
     }
   };
@@ -168,7 +169,6 @@ export const OrderProvider = ({ children }) => {
       
       return response.data;
     } catch (err) {
-      console.error('Errore nell\'aggiornamento dello stato dell\'ordine:', err);
       setError(err.response?.data?.error || 'Errore nell\'aggiornamento dello stato');
       return null;
     } finally {
@@ -200,7 +200,6 @@ export const OrderProvider = ({ children }) => {
       
       return true;
     } catch (err) {
-      console.error('Errore nell\'eliminazione dell\'ordine:', err);
       setError(err.response?.data?.error || 'Errore nell\'eliminazione dell\'ordine');
       return false;
     } finally {

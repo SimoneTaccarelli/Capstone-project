@@ -13,11 +13,11 @@ export const ProductProvider = ({ children }) => {
     currentPage: 1,
     totalPages: 1,
     totalProducts: 0,
-    productsPerPage: 10
+    productsPerPage: 8
   });
 
   // Carica prodotti con supporto paginazione
-  const fetchProducts = async (page = 1, limit = 10, filters = {}) => {
+  const fetchProducts = async (page = 1, limit = 8, filters = {}) => {
     setLoading(true);
     try {
       // Costruisci query string per filtri
@@ -26,13 +26,30 @@ export const ProductProvider = ({ children }) => {
       
       const response = await axios.get(`${API_URL}/product?${queryParams}`);
       
-      // Estrai info paginazione dall'header
+      // Prova a ottenere dati di paginazione dall'header
       const paginationHeader = response.headers['x-pagination'];
       if (paginationHeader) {
-        setPagination(JSON.parse(paginationHeader));
+        try {
+          const paginationData = JSON.parse(paginationHeader);
+          setPagination(paginationData);
+        } catch (e) {
+          // Gestione silenziosa dell'errore di parsing
+        }
+      } else {
+        // Fallback: crea paginazione manuale
+        setPagination({
+          currentPage: parseInt(page),
+          totalPages: Math.ceil((response.data.length || 0) / limit),
+          totalProducts: response.data.length || 0,
+          productsPerPage: parseInt(limit)
+        });
       }
       
-      setProducts(response.data);
+      setProducts(response.data.products || response.data);
+      if(response.data.pagination) {
+        setPagination(response.data.pagination);
+      }
+          
     } catch (error) {
       setError("Errore nel caricamento dei prodotti");
     } finally {
@@ -61,8 +78,6 @@ export const ProductProvider = ({ children }) => {
   useEffect(() => {
     fetchProducts();
   }, []);
-
- 
 
   return (
     <ProductContext.Provider value={{ 

@@ -13,7 +13,7 @@ export async function getAllProducts(request, response, next) {
         }
 
         // Pagination logic
-        const { page = 1, limit = 10 } = request.query;
+        const { page = 1, limit = 8 } = request.query;
         const startIndex = (page - 1) * limit;
         const endIndex = page * limit;
         const totalProducts = products.length;
@@ -25,10 +25,12 @@ export async function getAllProducts(request, response, next) {
             currentPage: parseInt(page),
             productsPerPage: parseInt(limit),
         };
-        response.set('X-Pagination', JSON.stringify(paginatedProducts));
+        response.set('X-Pagination', JSON.stringify({
+            products: paginatedProducts,
+            pagination: pagination
+        }));
 
-
-        response.status(200).json(products);
+        response.status(200).json(paginatedProducts);
     } catch (error) {
         response.status(500).json({ error: error.message });
     }
@@ -60,12 +62,10 @@ export const createProduct = async (req, res) => {
         } 
         // Gestisce URL Cloudinary
         else if (cloudinaryUrls) {
-            console.log("Ricevuto cloudinaryUrls:", cloudinaryUrls);
             try {
                 imageUrl = JSON.parse(cloudinaryUrls);
-                console.log("URL Cloudinary parsati:", imageUrl);
             } catch (error) {
-                console.error("Errore parsing cloudinaryUrls:", error);
+                return res.status(400).json({ error: "Errore nel formato degli URL Cloudinary" });
             }
         }
         
@@ -74,14 +74,13 @@ export const createProduct = async (req, res) => {
             description,
             price,
             category,
-            stock,  // Verifica che il campo nel modello sia 'stock' e non 'strock'
-            imageUrl // Assegna gli URL delle immagini
+            stock,
+            imageUrl
         });
         
         const savedProduct = await newProduct.save();
         res.status(201).json(savedProduct);
     } catch (error) {
-        console.error("Errore creazione prodotto:", error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -97,7 +96,7 @@ export async function updateProduct(request, response, next) {
             try {
                 existingImages = JSON.parse(request.body.existingImages);
             } catch (e) {
-                console.error('Errore nel parsing delle immagini esistenti:', e);
+                return response.status(400).json({ error: 'Errore nel formato delle immagini esistenti' });
             }
         }
         
@@ -117,8 +116,6 @@ export async function updateProduct(request, response, next) {
             const newImageUrls = request.files.map(file => file.path);
             updateProduct.imageUrl = [...existingImages, ...newImageUrls];
         }
-
-        console.log('Immagini finali:', updateProduct.imageUrl);
 
         const modifyProduct = await Product.findByIdAndUpdate(
             productId,

@@ -1,0 +1,97 @@
+Benvenuti nel repository del mio progetto finale conla scuola di EPICODE per il corso di Full-Stack Developer!
+Questo progetto è una completa applicazione Full-Stack E-Commerce, con Front-End React e Back-End Node.js/Express con database MongoDB.
+
+🚀 Tecnologie Utilizzate
+Front-End
+React – Libreria principale per il frontend
+
+React Context API – Gestione dello stato globale (es. carrello, autenticazione)
+
+React Router DOM – Navigazione client-side
+
+Bootstrap – Styling responsive
+
+Axios – Chiamate HTTP verso il server
+
+Back-End
+Node.js – Ambiente server-side
+
+Express.js – Framework per creare API REST
+
+MongoDB – Database NoSQL per la gestione dei dati
+
+Mongoose – ODM per interagire con MongoDB
+
+CORS – Per comunicazioni client-server
+
+body-parser – Per leggere i dati inviati nel body delle richieste
+
+📂 Struttura del Progetto
+front-end/ – Applicazione React
+
+back-end/ – Server Express con collegamento a MongoDB
+
+🛠️ Funzionalità
+✅ Registrazione e login utenti
+
+✅ CRUD completo sui prodotti
+
+✅ Aggiunta e gestione del carrello
+
+✅ Creazione e salvataggio degli ordini
+
+✅ Persistenza dei dati tramite MongoDB
+
+✅ Comunicazione sicura Front-End ⇄ Back-End
+
+✅ Design responsive grazie a Bootstrap
+
+🔧 Come Avviare il Progetto
+Requisiti
+Node.js installato
+
+MongoDB attivo (in locale o su MongoDB Atlas)
+
+Avvio del Back-End
+Vai nella cartella back-end:
+
+cd back-end
+
+
+Installa le dipendenze:
+
+npm install
+
+
+Crea un file .env nella cartella back-end con questo contenuto:
+
+env
+
+MONGO_URI=your-mongodb-connection-string
+PORT=5000
+(Sostituisci your-mongodb-connection-string con la tua stringa di connessione MongoDB.)
+
+
+
+Avvia il server:
+
+npm start
+Il server sarà disponibile su http://localhost:5000
+
+Avvio del Front-End
+
+
+In una nuova finestra di terminale, vai nella cartella front-end:
+
+cd front-end
+
+Installa le dipendenze:
+
+npm install
+
+
+Avvia l'app React:
+
+npm start
+L'app sarà disponibile su http://localhost:3000
+

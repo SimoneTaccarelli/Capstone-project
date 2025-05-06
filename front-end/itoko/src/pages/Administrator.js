@@ -118,9 +118,9 @@ const Administrator = () => {
       <div className="container mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2>Gestione Prodotti</h2>
-          <Button variant="primary" href="/CreateProduct">
+          <Link to="/Createproduct" className="btn btn-primary">
             <i className="bi bi-plus-circle me-2"></i> Nuovo Prodotto
-          </Button>
+          </Link>
         </div>
 
         {/* Tabella Prodotti */}

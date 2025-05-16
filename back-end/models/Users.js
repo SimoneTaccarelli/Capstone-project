@@ -1,6 +1,7 @@
+import mongoose from "mongoose";
 import mongoos from "mongoose";
 
-const userSchema = new mongoos.Schema({
+const userSchema = new mongoose.Schema({
     firebaseUid:{
         type: String,
         required: true,
@@ -33,5 +34,5 @@ const userSchema = new mongoos.Schema({
     
 },{timestamps: true});
 
-const User = mongoos.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
 export default User;

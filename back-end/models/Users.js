@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import mongoos from "mongoose";
+
 
 const userSchema = new mongoose.Schema({
     firebaseUid:{

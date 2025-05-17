@@ -10,7 +10,7 @@ import stripeRouter from './routes/stripe.js';
 import orderRouter from './routes/order.js';
 
 
-import Stripe from 'stripe';
+
 
 
 
@@ -52,9 +52,6 @@ mongoose.connection.on('error', (err) => {
   console.log('Failed to connect to MongoDB', err);
 });
 
-
-
-const router = express.Router();
 
 
 

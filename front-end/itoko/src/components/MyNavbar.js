@@ -5,7 +5,7 @@ import Login from '../modal/Login.js';
 import { useAuth } from '../context/AuthContext';
 import Cart from '../modal/Cart.js';
 import { useDesign } from '../context/DesignContext';
-import { useOrder } from '../context/OrderContext.js';
+// import { useOrder } from '../context/OrderContext.js';
 
 function MyNavbar() {
   const { logout, userData, currentUser } = useAuth();
@@ -13,18 +13,18 @@ function MyNavbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const { logo } = useDesign();
-  const { getUserOrders } = useOrder();
+  // const { getUserOrders } = useOrder();
 
   // Recupera gli ordini dell'utente loggato
-  const fetchUserOrders = async () => {
-    if (currentUser) {
-      try {
-        await getUserOrders();
-      } catch (error) {
-        // Gestione errore silenziosa
-      }
-    }
-  };
+  // const fetchUserOrders = async () => {
+  //   if (currentUser) {
+  //     try {
+  //       await getUserOrders();
+  //     } catch (error) {
+  //       // Gestione errore silenziosa
+  //     }
+  //   }
+  // };
 
   // Gestisce l'invio della ricerca
   const handleSearch = (e) => {
@@ -39,10 +39,10 @@ function MyNavbar() {
     navigate('/profile');
   };
 
-  const goToOrders = () => {
-    navigate('/ordersUser');
-    fetchUserOrders();
-  };
+  // const goToOrders = () => {
+  //   navigate('/ordersUser');
+  //   fetchUserOrders();
+  // };
 
   const handleLogout = async () => {
     try {
@@ -101,15 +101,15 @@ function MyNavbar() {
             {/* Wrapper per Carrello e Profilo */}
             <div className="d-flex align-items-center gap-2">
               {/* Carrello */}
-              <Cart />
+              {/* <Cart /> */}
               
               {/* Gestione login/profilo utente */}
               {!currentUser ? (
                 <>
-                <Login />
-                <Link to="/order" className="btn btn-outline-primary btn-sm">
-                  <i className="bi bi-box"></i> I miei ordini
-                </Link>
+                  <Login />
+                  {/* <Link to="/order" className="btn btn-outline-primary btn-sm">
+                    <i className="bi bi-box"></i> I miei ordini
+                  </Link> */}
                 </>
               ) : (
                 <Dropdown align="end">
@@ -130,10 +130,10 @@ function MyNavbar() {
                       <i className="bi bi-person me-2"></i>
                       Il mio profilo
                     </Dropdown.Item>
-                    <Dropdown.Item onClick={goToOrders}>
+                    {/* <Dropdown.Item onClick={goToOrders}>
                       <i className="bi bi-box me-2"></i>
                       I miei ordini
-                    </Dropdown.Item>
+                    </Dropdown.Item> */}
                     <Dropdown.Divider />
                     <Dropdown.Item onClick={handleLogout} className="text-danger">
                       <i className="bi bi-box-arrow-right me-2"></i>

@@ -3,7 +3,7 @@ import { Container, Toast, ToastContainer } from 'react-bootstrap';
 import { useLocation } from 'react-router-dom';
 import { useDesign } from '../context/DesignContext';
 import ProductList from '../components/ProductList';
-import { useOrder } from '../context/OrderContext';
+// import { useOrder } from '../context/OrderContext';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,7 +18,7 @@ const Home = () => {
   // Previeni chiamate dopo unmount
   const isMounted = useRef(true);
   
-  const { getUserOrders } = useOrder();
+  // const { getUserOrders } = useOrder();
   const { currentUser } = useAuth();
   
   const [showWelcomeToast, setShowWelcomeToast] = useState(false);
@@ -39,9 +39,9 @@ const Home = () => {
       setShowWelcomeToast(true);
       
       // Carica ordini dell'utente
-      getUserOrders();
+      // getUserOrders();
     }
-  }, [currentUser, location.state, getUserOrders]);
+  }, [currentUser, location.state, ]);
 
   return (
     <>

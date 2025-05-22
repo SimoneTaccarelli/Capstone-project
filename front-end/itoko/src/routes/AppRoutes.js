@@ -6,11 +6,11 @@ import Home from "../pages/Home";
 import CreateProduct from "../pages/CreateProduct";
 import { useAuth } from "../context/AuthContext";
 import Details from "../pages/Details";
-import SuccessPayment from "../pages/SuccessPayment";
+// import SuccessPayment from "../pages/SuccessPayment";
 import ProfileUser from "../pages/ProfileUser";
-import OrderAdmin from "../pages/OrderAdmin";
-import OrderUser from "../pages/OrderUser";
-import Order from "../pages/Order";
+// import OrderAdmin from "../pages/OrderAdmin";
+// import OrderUser from "../pages/OrderUser";
+// import Order from "../pages/Order";
 
 const AppRoutes = () => {
     const { userData, loading } = useAuth();
@@ -33,24 +33,24 @@ const AppRoutes = () => {
             <MyNavbar />
             <Routes>
                 {/* Route pubbliche */}
-                <Route path="/success" element={<SuccessPayment />} />
+                {/* <Route path="/success" element={<SuccessPayment />} /> */}
                 <Route path="/register" element={<Register />} />
                 <Route path="/details/:id" element={<Details />} />
-                <Route path="/order" element={<Order />} />
+                {/* <Route path="/order" element={<Order />} /> */}
                 <Route path="/" element={<Home />} />
                 
                 {/* Route che richiedono autenticazione */}
-                <Route path="/ordersUser" element={user ? <OrderUser /> : <Navigate to="/" />} />
+                {/* <Route path="/ordersUser" element={user ? <OrderUser /> : <Navigate to="/" />} /> */}
                 <Route path="/profile" element={user ? <ProfileUser /> : <Navigate to="/" />} />
                 
                 {/* Route admin */}
-                <Route path="/order-admin" element={isAdmin ? <OrderAdmin /> : <Navigate to="/" />} />
+                {/* <Route path="/order-admin" element={isAdmin ? <OrderAdmin /> : <Navigate to="/" />} /> */}
                 <Route path="/Administrator" element={isAdmin ? <Administrator /> : <Navigate to="/" />} />
                 <Route path="/CreateProduct" element={isAdmin ? <CreateProduct /> : <Navigate to="/" />} />
                 
                 {/* Aggiungi queste route per gestire eventuali variazioni del percorso */}
-                <Route path="/orderadmin" element={<Navigate to="/order-admin" replace />} />
-                <Route path="/OrderAdmin" element={<Navigate to="/order-admin" replace />} />
+                {/* <Route path="/orderadmin" element={<Navigate to="/order-admin" replace />} />
+                <Route path="/OrderAdmin" element={<Navigate to="/order-admin" replace />} /> */}
 
                 {/* Route di fallback per gestire URL non trovati */}
                 <Route path="*" element={

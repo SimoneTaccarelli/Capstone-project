@@ -6,7 +6,7 @@ import { useCart } from '../context/CartContext';
 
 const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
   const { products, loading, error, pagination, fetchProducts } = useProducts();
-  const { addToCart } = useCart();
+  // const { addToCart } = useCart();
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [categories, setCategories] = useState([]);
@@ -141,12 +141,12 @@ const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
                         >
                           <i className="bi bi-eye me-1"></i> Visualizza
                         </Link>
-                        <button 
+                        {/* <button 
                           className="btn btn-sm btn-outline-primary"
                           onClick={() => addToCart(product)}
                         >
                           <i className="bi bi-cart-plus me-1"></i> Aggiungi al carrello
-                        </button>
+                        </button> */}
                       </div>
                     </Card.Footer>
                   </Card>

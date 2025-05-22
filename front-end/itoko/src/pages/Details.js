@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useProducts } from "../context/ProductContext";
-import { useCart } from "../context/CartContext";
+// import { useCart } from "../context/CartContext";
 import { useState } from 'react';
 import { Row, Col, Button, Form, Badge } from 'react-bootstrap';
 // Importa la libreria per l'effetto lente d'ingrandimento
@@ -10,11 +10,11 @@ import '../styles/imageZoom.css';
 
 const Details = () => {
   const { products, loading, error } = useProducts();
-  const { addToCart } = useCart();
+  // const { addToCart } = useCart();
   const { id } = useParams();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [addedToCart, setAddedToCart] = useState(false);
+  // const [quantity, setQuantity] = useState(1);
+  // const [addedToCart, setAddedToCart] = useState(false);
   
   const product = products?.find(p => p._id === id);
 
@@ -22,16 +22,16 @@ const Details = () => {
   if (error) return <div className="alert alert-danger">{error}</div>;
   if (!product) return <div className="alert alert-warning">Prodotto non trovato</div>;
 
-  const handleAddToCart = () => {
-    addToCart({
-      ...product,
-      quantity
-    });
+  // const handleAddToCart = () => {
+  //   addToCart({
+  //     ...product,
+  //     quantity
+  //   });
     
-    // Feedback visivo
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
-  };
+  //   // Feedback visivo
+  //   setAddedToCart(true);
+  //   setTimeout(() => setAddedToCart(false), 2000);
+  // };
 
   return (
     <div className="container my-5">
@@ -106,7 +106,7 @@ const Details = () => {
           
           <h3 className="mb-4 text-primary">€{product.price?.toFixed(2) || '0.00'}</h3>
           
-          <div className="d-flex align-items-center mb-4">
+          {/* <div className="d-flex align-items-center mb-4">
             <Form.Group className="me-3" style={{ width: '100px' }}>
               <Form.Label>Quantità</Form.Label>
               <Form.Control
@@ -131,9 +131,9 @@ const Details = () => {
                 </p>
               )}
             </div>
-          </div>
+          </div> */}
           
-          <Button 
+          {/* <Button 
             variant={addedToCart ? "success" : "primary"} 
             size="lg" 
             className="w-100 mb-3"
@@ -151,7 +151,7 @@ const Details = () => {
                 Aggiungi al carrello
               </>
             )}
-          </Button>
+          </Button> */}
           
           {/* Informazioni aggiuntive */}
           <div className="mt-4 p-3 bg-light rounded">

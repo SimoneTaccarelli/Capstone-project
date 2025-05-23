@@ -8,6 +8,8 @@ import { useAuth } from "../context/AuthContext";
 import Details from "../pages/Details";
 // import SuccessPayment from "../pages/SuccessPayment";
 import ProfileUser from "../pages/ProfileUser";
+import WhoWeAre from "../pages/WhoWeAre";
+import PrivacyAndPolicy from "../pages/PrivacyAndPolicy";
 // import OrderAdmin from "../pages/OrderAdmin";
 // import OrderUser from "../pages/OrderUser";
 // import Order from "../pages/Order";
@@ -36,6 +38,8 @@ const AppRoutes = () => {
                 {/* <Route path="/success" element={<SuccessPayment />} /> */}
                 <Route path="/register" element={<Register />} />
                 <Route path="/details/:id" element={<Details />} />
+                <Route path="/who-we-are" element={<WhoWeAre />} />
+                <Route path="/privacy-and-policy" element={<PrivacyAndPolicy />} />
                 {/* <Route path="/order" element={<Order />} /> */}
                 <Route path="/" element={<Home />} />
                 

@@ -73,7 +73,8 @@ function MyNavbar() {
         <Navbar.Collapse id="navbarScroll">
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/">Home</Nav.Link>
-            <Nav.Link as={Link} to="/products">Prodotti</Nav.Link>
+            <Nav.Link as={Link} to="/who-we-are">Chi siamo</Nav.Link>
+            <Nav.Link as={Link} to="/privacy-and-policy">Privacy&Policy</Nav.Link>
             {isAdmin && (
               <Nav.Link as={Link} to="/administrator">Amministrazione</Nav.Link>
             )}

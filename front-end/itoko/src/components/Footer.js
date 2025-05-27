@@ -6,8 +6,8 @@ const Footer = () => {
         <footer className="bg-dark text-white py-4">
             <Container>
                 <div className="text-center">
-                    <p>&copy; {new Date().getFullYear()} Itoko. Tutti i diritti riservati.</p>
                     <p>Realizzato da Itoko Team</p>
+                    <p>Seguici sulla nostra pagina Instagram per vedere i nostri post</p>
                     {/* Aggiunta dell'icona di Instagram */}
                     <a 
                         href="https://www.instagram.com/itokonolab/" // Sostituisci con il link alla tua pagina Instagram

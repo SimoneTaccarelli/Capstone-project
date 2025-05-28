@@ -21,6 +21,15 @@ const storage = new CloudinaryStorage({
   }
 });
 
+const graphicStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'itoko/graphic',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
+    transformation: [{ width: 500, height: 500, crop: 'limit' }]
+  }
+});
+
 // Configura lo storage per prodotti
 const productStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -71,6 +80,8 @@ const productUpload = multer({ storage: productStorage });
 // Middleware di upload per avatar
 const avatarUpload = multer({ storage: avatarStorage });
 
+const graphicUpload = multer({ storage: graphicStorage });
+
 // Middleware di upload per logo
 const logoUpload = multer({ 
   storage: logoStorage,
@@ -113,5 +124,7 @@ export {
   logoUpload,        // Nuovo export
   frontImageUpload,  // Nuovo export
   designUpload,      // Puoi rimuoverlo se non lo utilizzi più
-  upload 
+  upload,
+  graphicUpload
+
 };

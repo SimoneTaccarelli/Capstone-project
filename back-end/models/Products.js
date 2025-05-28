@@ -1,27 +1,35 @@
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
-  name: { type: String,
+  name: { 
+    type: String, 
     required: true 
-},
-
+  },
   description: { 
     type: String 
-},
-
-  price: { type: Number, 
+  },
+  price: { 
+    type: Number, 
     required: true 
-},
-
+  },
   imageUrl: [{ 
     type: String 
-}], // ✅ Corretto: array di stringhe
+  }],
   category: { 
     type: String 
-},
-  stock: { 
-    type: Number, default: 0 
-}
+  }, // es: "Anime", "Manga"
+  
+  type: {
+    type: String,
+    enum: ["T-shirt", "Hoodie"],
+    required: true,
+  },
+  graphic: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Graphic",
+    required: true,
+  },
+  
 });
 
 const Product = mongoose.model("Product", productSchema);

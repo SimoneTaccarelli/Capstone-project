@@ -2,29 +2,38 @@ import Product from '../models/Products.js';
 
 export async function getAllProducts(request, response, next) {
     try {
-        const products = await Product.find().populate('category', 'name');
+        const products = await Product.find().populate('graphic', 'name');
         if (!products || products.length === 0) {
             return response.status(404).json({ error: 'No products found' });
         }
-        // Filter products based on query parameters
-        const { category } = request.query;
+
+        // Filtra i prodotti in base ai parametri di query
+        const { category, type } = request.query;
+        let filteredProducts = products;
+
         if (category) {
-            products = products.filter(product => product.category.toLowerCase().includes(category.toLowerCase()));
+            filteredProducts = filteredProducts.filter(product => product.category.toLowerCase().includes(category.toLowerCase()));
         }
 
-        // Pagination logic
+        if (type) {
+            filteredProducts = filteredProducts.filter(product => product.type === type);
+        }
+
+        // Logica di paginazione
         const { page = 1, limit = 8 } = request.query;
         const startIndex = (page - 1) * limit;
         const endIndex = page * limit;
-        const totalProducts = products.length;
+        const totalProducts = filteredProducts.length;
         const totalPages = Math.ceil(totalProducts / limit);
-        const paginatedProducts = products.slice(startIndex, endIndex);
+        const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
         const pagination = {
             totalProducts,
             totalPages,
             currentPage: parseInt(page),
             productsPerPage: parseInt(limit),
         };
+
         response.set('X-Pagination', JSON.stringify({
             products: paginatedProducts,
             pagination: pagination
@@ -39,7 +48,7 @@ export async function getAllProducts(request, response, next) {
 export async function getProductById(request, response, next) {
     try {
         const { productId } = request.params;
-        const product = await Product.findById(productId).populate('category', 'name');
+        const product = await Product.findById(productId).populate('graphic', 'name');
         if (!product) {
             return response.status(404).json({ error: 'Product not found' });
         }
@@ -51,11 +60,11 @@ export async function getProductById(request, response, next) {
 
 export const createProduct = async (req, res) => {
     try {
-        const { name, description, price, category, stock, cloudinaryUrls } = req.body;
-        
+        const { name, description, price, category, type, graphic, stock, cloudinaryUrls } = req.body;
+
         // Array per memorizzare le immagini
         let imageUrl = [];
-        
+
         // Gestisce file caricati direttamente (dal multer)
         if (req.files && req.files.length > 0) {
             imageUrl = req.files.map(file => file.path);
@@ -68,16 +77,17 @@ export const createProduct = async (req, res) => {
                 return res.status(400).json({ error: "Errore nel formato degli URL Cloudinary" });
             }
         }
-        
+
         const newProduct = new Product({
             name,
             description,
             price,
             category,
-            stock,
+            type,
+            graphic,
             imageUrl
         });
-        
+
         const savedProduct = await newProduct.save();
         res.status(201).json(savedProduct);
     } catch (error) {
@@ -88,9 +98,9 @@ export const createProduct = async (req, res) => {
 export async function updateProduct(request, response, next) {
     try {
         const { productId } = request.params;
-        const { name, description, price, category, stock } = request.body;
+        const { name, description, price, category, type, graphic } = request.body;
         let existingImages = [];
-    
+
         // Parse JSON string to array
         if (request.body.existingImages) {
             try {
@@ -99,18 +109,19 @@ export async function updateProduct(request, response, next) {
                 return response.status(400).json({ error: 'Errore nel formato delle immagini esistenti' });
             }
         }
-        
+
         // Crea l'oggetto per l'aggiornamento
         const updateProduct = {};
         if (name) updateProduct.name = name;
         if (description) updateProduct.description = description;   
         if (price) updateProduct.price = price;
         if (category) updateProduct.category = category;
-        if (stock !== undefined) updateProduct.stock = stock;
+        if (type) updateProduct.type = type;
+        if (graphic) updateProduct.graphic = graphic;
 
         // Gestione immagini
         updateProduct.imageUrl = existingImages;
-        
+
         // Aggiungi nuove immagini
         if (request.files && request.files.length > 0) {
             const newImageUrls = request.files.map(file => file.path);
@@ -122,11 +133,11 @@ export async function updateProduct(request, response, next) {
             { $set: updateProduct },
             { new: true }
         );
-        
+
         if (!modifyProduct) {
             return response.status(404).json({ error: 'Product not found' });
         }
-        
+
         response.status(200).json(modifyProduct);
     } catch (error) {
         response.status(500).json({ error: error.message });
@@ -150,17 +161,17 @@ export async function updateProductStock(request, response) {
     try {
         const { productId } = request.params;
         const { stock } = request.body;
-        
+
         const updateStock = await Product.findByIdAndUpdate(
             productId,
-            {stock: stock },
+            { stock: stock },
             { new: true }
         );
-        
+
         if (!updateStock) {
             return response.status(404).json({ error: 'Product not found' });
         }
-        
+
         response.status(200).json(updateStock);
     } catch (error) {
         response.status(500).json({ error: error.message });

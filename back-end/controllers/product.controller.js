@@ -60,7 +60,7 @@ export async function getProductById(request, response, next) {
 
 export const createProduct = async (req, res) => {
     try {
-        const { name, description, price, category, type, graphic, stock, cloudinaryUrls } = req.body;
+        const { name, description, price, category, type, graphic, cloudinaryUrls } = req.body;
 
         // Array per memorizzare le immagini
         let imageUrl = [];
@@ -152,27 +152,6 @@ export async function eliminateProduct(request, response, next) {
             return response.status(404).json({ error: 'Product not found' });
         }
         response.status(200).json({ message: 'Product deleted successfully' });
-    } catch (error) {
-        response.status(500).json({ error: error.message });
-    }
-}
-
-export async function updateProductStock(request, response) {
-    try {
-        const { productId } = request.params;
-        const { stock } = request.body;
-
-        const updateStock = await Product.findByIdAndUpdate(
-            productId,
-            { stock: stock },
-            { new: true }
-        );
-
-        if (!updateStock) {
-            return response.status(404).json({ error: 'Product not found' });
-        }
-
-        response.status(200).json(updateStock);
     } catch (error) {
         response.status(500).json({ error: error.message });
     }

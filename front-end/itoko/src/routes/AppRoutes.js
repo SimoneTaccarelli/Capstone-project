@@ -1,11 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Register from "../pages/Register";
+// import Register from "../pages/Register";
 import MyNavbar from "../components/MyNavbar";
 import Administrator from "../pages/Administrator";
 import Home from "../pages/Home";
 import CreateProduct from "../pages/CreateProduct";
 import { useAuth } from "../context/AuthContext";
 import Details from "../pages/Details";
+import LoginAdmin from "../pages/LoginAdmin";
 // import SuccessPayment from "../pages/SuccessPayment";
 import ProfileUser from "../pages/ProfileUser";
 import WhoWeAre from "../pages/WhoWeAre";
@@ -36,9 +37,10 @@ const AppRoutes = () => {
             <Routes>
                 {/* Route pubbliche */}
                 {/* <Route path="/success" element={<SuccessPayment />} /> */}
-                <Route path="/register" element={<Register />} />
+                {/* <Route path="/register" element={<Register />} /> */}
                 <Route path="/details/:id" element={<Details />} />
                 <Route path="/who-we-are" element={<WhoWeAre />} />
+                <Route path="/login-admin" element={<LoginAdmin />} />
                 <Route path="/privacy-and-policy" element={<PrivacyAndPolicy />} />
                 {/* <Route path="/order" element={<Order />} /> */}
                 <Route path="/" element={<Home />} />

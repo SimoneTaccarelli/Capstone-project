@@ -10,6 +10,6 @@ router.get('/product/:productId', productController.getProductById);
 router.post('/product', userController.verifyToken, userController.isAdministrator, upload.array('images', 5), productController.createProduct);
 router.put('/product/:productId', userController.verifyToken, userController.isAdministrator, upload.array('images', 5), productController.updateProduct);
 router.delete('/product/:productId', userController.verifyToken, userController.isAdministrator, productController.eliminateProduct);
-router.patch('/product/:productId/stock', userController.verifyToken, userController.isAdministrator, productController.updateProductStock);
+
 
 export default router;

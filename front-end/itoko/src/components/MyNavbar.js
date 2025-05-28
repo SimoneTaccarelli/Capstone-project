@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Container, Nav, Navbar, Form, InputGroup, Dropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import Login from '../modal/Login.js';
+// import Login from '../modal/Login.js';
 import { useAuth } from '../context/AuthContext';
 import Cart from '../modal/Cart.js';
 import { useDesign } from '../context/DesignContext';
@@ -107,7 +107,7 @@ function MyNavbar() {
               {/* Gestione login/profilo utente */}
               {!currentUser ? (
                 <>
-                  <Login />
+                  {/* <Login /> */}
                   {/* <Link to="/order" className="btn btn-outline-primary btn-sm">
                     <i className="bi bi-box"></i> I miei ordini
                   </Link> */}

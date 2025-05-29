@@ -21,7 +21,7 @@ export const verifyToken = async (req, res, next) => {
 };
 
 // Registrazione utente + invio email di benvenuto
-export async function freshRegister(request, response, next) {
+export async function freshRegister(request, response) {
   try {
     const {email, firstName, lastName, firebaseUid} = request.body;
     
@@ -45,7 +45,6 @@ export async function freshRegister(request, response, next) {
       lastName,
       firebaseUid,
       profilePic: null,
-      role: 'User'
     });
     
     await user.save();
@@ -133,7 +132,6 @@ export async function loginGoogle(request, response) {
           email, 
           firstName, 
           lastName,
-          role: 'User',
           profilePic: null
         });
       }
@@ -172,7 +170,6 @@ export async function getUserData(request, response) {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      role: user.role,
       profilePic: user.profilePic,
       createdAt: user.createdAt
     });
@@ -226,11 +223,24 @@ export const updateUser = async (req, res) => {
 
 // Verifica admin
 export async function isAdministrator(request, response, next) {
+
+  const authHeader = request.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return response.status(401).json({error: "Unauthorized"});
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
   try {
-    if (request.user.role !== 'Admin') {
-      return response.status(403).json({error: "Forbidden"});
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    if(decodedToken.admin === true) {
+      request.user = decodedToken;
+      next();
+    }else{
+      return response.status(403).json({error: "Access denied"});
     }
-    next();
+
   } catch (error) {
     response.status(401).json({error: error.message});
   }

@@ -7,10 +7,12 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   updateProfile,
-  fetchSignInMethodsForEmail
+  fetchSignInMethodsForEmail,
+  getAuth
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import axios from 'axios';
+import { set } from 'mongoose';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
 const AuthContext = createContext();
@@ -18,11 +20,46 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  // Stati principali
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [admin, setAdmin] = useState(false);
+  const auth = getAuth();
+
+  // Monitora autenticazione e verifica ruolo admin
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+
+      if (!user) {
+        setUserData(null);
+        setAdmin(false); // Reset ruolo admin
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Ottieni il token e verifica il ruolo admin
+        const idTokenResult = await user.getIdTokenResult();
+        const isAdmin = idTokenResult.claims.role === 'admin';
+        setAdmin(isAdmin);
+
+        if (isAdmin) {
+          console.log("L'utente è un amministratore");
+        } else {
+          console.log("L'utente non è un amministratore");
+        }
+      } catch (error) {
+        console.error("Errore durante la verifica del ruolo admin:", error);
+        setAdmin(false);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
 
   // Funzioni di utilità
   const getCurrentToken = async () => {
@@ -149,6 +186,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
+
   const deleteUserAccount = async () => {
     try {
       const token = await getCurrentToken();
@@ -219,36 +258,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Monitora autenticazione
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      
-      if (!user) {
-        setUserData(null);
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        // Richiedi token dopo 500ms per garantire che sia valido
-        setTimeout(async () => {
-          try {
-            const token = await user.getIdToken();
-            const data = await fetchUserData(token);
-            if (data) setUserData(data);
-          } finally {
-            setLoading(false);
-          }
-        }, 500);
-      } catch {
-        setLoading(false);
-      }
-    });
-    
-    return () => unsubscribe();
-  }, []);
-
   const avatarUrl = `https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${userData?.firstName || 'U'}+${userData?.lastName || 'N'}`;
 
   return (
@@ -264,7 +273,7 @@ export const AuthProvider = ({ children }) => {
       loginWithGoogle,
       updateUserProfile,
       deleteUserAccount,
-      isAdmin: userData?.role === 'admin'
+      admin // Aggiunto admin al contesto
     }}>
       {children}
     </AuthContext.Provider>

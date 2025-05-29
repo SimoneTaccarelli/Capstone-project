@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import express from 'express';
-import mongoose from 'mongoose';
+import mongoose, { set } from 'mongoose';
 import cors from 'cors';
 import admin from 'firebase-admin';
 import authRouter from './routes/auth.js';
@@ -34,6 +34,8 @@ server.use('/api/v1/order' , orderRouter)
 admin.initializeApp({
   credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_CREDENTIALS))
 });
+
+
 
 
 

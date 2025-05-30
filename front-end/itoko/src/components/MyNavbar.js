@@ -8,7 +8,7 @@ import { useDesign } from '../context/DesignContext';
 // import { useOrder } from '../context/OrderContext.js';
 
 function MyNavbar() {
-  const { logout, userData, currentUser } = useAuth();
+  const { logout, userData, currentUser, admin } = useAuth();
   const isAdmin = userData && userData.role === "Admin";
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
@@ -75,7 +75,7 @@ function MyNavbar() {
             <Nav.Link as={Link} to="/">Home</Nav.Link>
             <Nav.Link as={Link} to="/who-we-are">Chi siamo</Nav.Link>
             <Nav.Link as={Link} to="/privacy-and-policy">Privacy&Policy</Nav.Link>
-            {isAdmin && (
+            {admin && (
               <Nav.Link as={Link} to="/administrator">Amministrazione</Nav.Link>
             )}
           </Nav>

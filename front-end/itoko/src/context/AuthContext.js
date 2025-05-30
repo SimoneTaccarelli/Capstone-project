@@ -45,13 +45,21 @@ export const AuthProvider = ({ children }) => {
       try {
         // Forza il refresh del token per ottenere i custom claims aggiornati
         const idToken = await user.getIdToken(true); // Forza il refresh del token
-       
 
-        const response = await axios.post(`${API_URL}/auth/verify-admin`, {}, {
+        
+
+        // Recupera i dati utente dal backend
+        const userResponse = await axios.get(`${API_URL}/auth/me`, {
           headers: { Authorization: `Bearer ${idToken}` }
         });
+        setUserData(userResponse.data); // Aggiorna lo stato userData
 
-        setAdmin(response.data.admin === true);
+        // Verifica il ruolo admin
+        const adminResponse = await axios.post(`${API_URL}/auth/verify-admin`, {}, {
+          headers: { Authorization: `Bearer ${idToken}` }
+        });
+       
+        setAdmin(adminResponse.data.admin === true);
       } catch (error) {
         console.error("Errore durante la verifica del ruolo admin:", error);
         setAdmin(false);
@@ -261,6 +269,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const avatarUrl = `https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${userData?.firstName || 'U'}+${userData?.lastName || 'N'}`;
+
+  
 
   return (
     <AuthContext.Provider value={{

@@ -1,109 +1,94 @@
 import { Form, Container, Row, Col, Button } from "react-bootstrap";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useProducts } from "../context/ProductContext";
 import axios from "axios";
 import { API_URL } from "../config/config";
-import { useProducts } from "../context/ProductContext";
 
 /**
  * Componente per creare un nuovo prodotto nell'e-commerce
  * Permette l'inserimento di dati testuali e immagini
  */
 const CreateProduct = () => {
-    // Recupera dati utente e funzionalità di navigazione
-    const { userData, currentUser } = useAuth();
-    const { addProduct } = useProducts();
+    const { addProduct } = useProducts(); // Usa la funzione addProduct dal contesto
     const navigate = useNavigate();
-    
+
     // Stati per gestire i dati del form
     const [productName, setProductName] = useState("");
     const [productDescription, setProductDescription] = useState("");
     const [productPrice, setProductPrice] = useState("");
     const [productCategory, setProductCategory] = useState("");
-    const [productStock, setProductStock] = useState("");
-    
-    // Stati per gestire immagini e anteprime (simile a ModifyProduct)
+    const [productType, setProductType] = useState(""); // T-shirt o Hoodie
+    const [productGraphic, setProductGraphic] = useState(""); // ID della grafica
+    const [graphics, setGraphics] = useState([]); // Lista delle grafiche disponibili
     const [productImages, setProductImages] = useState([]);
     const [imagePreview, setImagePreview] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
-    
-    // Verifica se l'utente è amministratore
-    const isAdmin = userData && userData.role === "Admin";
 
-    // Gestione nuove immagini (simile a handleNewImages in ModifyProduct)
+    // Carica le grafiche disponibili dal backend
+    useEffect(() => {
+        const fetchGraphics = async () => {
+            try {
+                const response = await axios.get(`${API_URL}/graphics`);
+                setGraphics(response.data);
+            } catch (err) {
+                console.error("Errore durante il caricamento delle grafiche:", err);
+            }
+        };
+        fetchGraphics();
+    }, []);
+
+    // Gestione nuove immagini
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         setProductImages([...productImages, ...files]);
-        
-        // Crea URL per le anteprime
+
         const newPreviews = files.map(file => URL.createObjectURL(file));
         setImagePreview([...imagePreview, ...newPreviews]);
     };
 
-    // Rimuovi nuova immagine (simile a removeNewImage in ModifyProduct)
+    // Rimuovi immagine
     const removeImage = (index) => {
         const updatedImages = [...productImages];
         updatedImages.splice(index, 1);
         setProductImages(updatedImages);
-        
+
         const updatedPreviews = [...imagePreview];
-        URL.revokeObjectURL(updatedPreviews[index]); // Libera memoria
+        URL.revokeObjectURL(updatedPreviews[index]);
         updatedPreviews.splice(index, 1);
         setImagePreview(updatedPreviews);
     };
 
-    /**
-     * Gestisce la creazione di un nuovo prodotto
-     * @param {Event} e - Evento submit del form
-     */
+    // Gestisce la creazione di un nuovo prodotto
     const handleCreateProduct = async (e) => {
         e.preventDefault();
-        
-        // Verifica permessi amministratore prima di procedere
-        if (!isAdmin) {
-            setError("Solo gli amministratori possono creare prodotti");
-            return;
-        }
-        
-        // Verifica che ci siano immagini
+
         if (productImages.length === 0) {
             setError("È necessario caricare almeno un'immagine per il prodotto");
             return;
         }
-        
-        // Prepara i dati del form da inviare al server
-        const formData = new FormData();
-        formData.append("name", productName);
-        formData.append("description", productDescription);
-        formData.append("price", productPrice);
-        formData.append("category", productCategory);
-        formData.append("stock", productStock);
 
-        // Aggiungi le immagini alla FormData
-        productImages.forEach(file => {
-            formData.append("images", file);
-        });
+        if (!productType || !productGraphic) {
+            setError("È necessario selezionare il tipo di prodotto e una grafica");
+            return;
+        }
+
+        const productData = {
+            name: productName,
+            description: productDescription,
+            price: productPrice,
+            category: productCategory,
+            type: productType,
+            graphic: productGraphic,
+            images: productImages,
+        };
 
         try {
             setIsSubmitting(true);
             setError(null);
-            
-            // Ottieni token di autenticazione da Firebase
-            const token = await currentUser.getIdToken();
-            
-            // Invia richiesta al server per creare il prodotto
-            const response = await axios.post(`${API_URL}/product`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            
-            addProduct(response.data); // Aggiungi il prodotto al contesto
-            
-            // Naviga alla pagina amministratore dopo il successo
+
+            await addProduct(productData); // Usa la funzione addProduct dal contesto
             navigate("/administrator");
         } catch (err) {
             setError("Errore durante la creazione del prodotto: " + (err.response?.data?.error || err.message));
@@ -116,12 +101,12 @@ const CreateProduct = () => {
         <Container className="py-5">
             <div className="bg-light p-4 rounded-3 shadow-sm mb-4">
                 <h2 className="text-center mb-4">Aggiungi Nuovo Prodotto</h2>
-                
+
                 {error && <div className="alert alert-danger">{error}</div>}
-                
+
                 <Form onSubmit={handleCreateProduct}>
                     <Row className="g-4">
-                        {/* Colonna sinistra - primi 3 input */}
+                        {/* Colonna sinistra */}
                         <Col md={6}>
                             <Form.Group controlId="productName" className="mb-3">
                                 <Form.Label>Nome Prodotto</Form.Label>
@@ -133,7 +118,7 @@ const CreateProduct = () => {
                                     required
                                 />
                             </Form.Group>
-                            
+
                             <Form.Group controlId="productDescription" className="mb-3">
                                 <Form.Label>Descrizione</Form.Label>
                                 <Form.Control 
@@ -145,7 +130,7 @@ const CreateProduct = () => {
                                     required
                                 />
                             </Form.Group>
-                            
+
                             <Form.Group controlId="productPrice" className="mb-3">
                                 <Form.Label>Prezzo €</Form.Label>
                                 <Form.Control 
@@ -158,8 +143,8 @@ const CreateProduct = () => {
                                 />
                             </Form.Group>
                         </Col>
-                        
-                        {/* Colonna destra - altri 3 input */}
+
+                        {/* Colonna destra */}
                         <Col md={6}>
                             <Form.Group controlId="productCategory" className="mb-3">
                                 <Form.Label>Categoria</Form.Label>
@@ -171,18 +156,36 @@ const CreateProduct = () => {
                                     required
                                 />
                             </Form.Group>
-                            
-                            <Form.Group controlId="productStock" className="mb-3">
-                                <Form.Label>Disponibilità</Form.Label>
-                                <Form.Control 
-                                    type="number" 
-                                    placeholder="Inserisci quantità disponibile" 
-                                    value={productStock} 
-                                    onChange={(e) => setProductStock(e.target.value)} 
+
+                            <Form.Group controlId="productType" className="mb-3">
+                                <Form.Label>Tipo di Prodotto</Form.Label>
+                                <Form.Select 
+                                    value={productType} 
+                                    onChange={(e) => setProductType(e.target.value)} 
                                     required
-                                />
+                                >
+                                    <option value="">Seleziona tipo</option>
+                                    <option value="T-shirt">T-shirt</option>
+                                    <option value="Hoodie">Hoodie</option>
+                                </Form.Select>
                             </Form.Group>
-                            
+
+                            <Form.Group controlId="productGraphic" className="mb-3">
+                                <Form.Label>Grafica</Form.Label>
+                                <Form.Select 
+                                    value={productGraphic} 
+                                    onChange={(e) => setProductGraphic(e.target.value)} 
+                                    required
+                                >
+                                    <option value="">Seleziona grafica</option>
+                                    {graphics.map(graphic => (
+                                        <option key={graphic._id} value={graphic._id}>
+                                            {graphic.name}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+
                             <Form.Group controlId="productImages" className="mb-3">
                                 <Form.Label>Immagini Prodotto</Form.Label>
                                 <Form.Control 
@@ -194,8 +197,8 @@ const CreateProduct = () => {
                             </Form.Group>
                         </Col>
                     </Row>
-                    
-                    {/* Visualizzazione delle immagini in griglia (simile a ModifyProduct) */}
+
+                    {/* Anteprima immagini */}
                     {imagePreview.length > 0 && (
                         <div className="mt-4">
                             <h5 className="mb-3">Anteprima Immagini</h5>
@@ -221,7 +224,7 @@ const CreateProduct = () => {
                             </div>
                         </div>
                     )}
-                    
+
                     {/* Pulsante submit */}
                     <div className="text-center mt-4">
                         <Button 
@@ -243,6 +246,6 @@ const CreateProduct = () => {
             </div>
         </Container>
     );
-}
+};
 
 export default CreateProduct;

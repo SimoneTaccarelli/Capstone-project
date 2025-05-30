@@ -222,31 +222,59 @@ export const updateUser = async (req, res) => {
 };
 
 // Verifica admin
-export async function isAdministrator(request, response, next) {
+export async function isAdministrator(request, response) {
   const authHeader = request.headers.authorization;
+  
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  
     return response.status(401).json({ error: "Unauthorized" });
   }
 
   const idToken = authHeader.split('Bearer ')[1];
-  
+
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
-   
+ 
 
     if (decodedToken.admin === true) {
       request.user = decodedToken;
-      return response.status(200).json({ admin: true }); // Risposta esplicita
+      return response.status(200).json({ admin: true });
     } else {
       return response.status(403).json({ error: "Access denied" });
     }
   } catch (error) {
-   
+    console.error('Error verifying token:', error.message);
     response.status(401).json({ error: error.message });
   }
 }
 
+export async function isAdminMiddleware(request, response, next) {
+  const authHeader = request.headers.authorization;
+  console.log('Authorization Header:', authHeader); // Log dell'header Authorization
 
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('Authorization header missing or invalid');
+    return response.status(401).json({ error: "Unauthorized" });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  console.log('ID Token:', idToken); // Log del token JWT
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    console.log('Decoded Token:', decodedToken); // Log del token decodificato
+
+    if (decodedToken.admin === true) {
+      request.user = decodedToken; // Aggiungi i dati utente alla richiesta
+      next(); // Passa al middleware successivo
+    } else {
+      return response.status(403).json({ error: "Access denied" });
+    }
+  } catch (error) {
+    console.error('Error verifying token:', error.message);
+    response.status(401).json({ error: error.message });
+  }
+}
 

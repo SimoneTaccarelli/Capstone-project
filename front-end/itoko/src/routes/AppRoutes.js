@@ -16,8 +16,7 @@ import PrivacyAndPolicy from "../pages/PrivacyAndPolicy";
 // import Order from "../pages/Order";
 
 const AppRoutes = () => {
-    const { userData, loading } = useAuth();
-    const isAdmin = userData && userData.role === "Admin";
+    const { userData, loading, admin } = useAuth();
     const user = userData && userData._id;
 
     // Se stiamo ancora caricando i dati di autenticazione, mostra un indicatore di caricamento
@@ -51,8 +50,8 @@ const AppRoutes = () => {
                 
                 {/* Route admin */}
                 {/* <Route path="/order-admin" element={isAdmin ? <OrderAdmin /> : <Navigate to="/" />} /> */}
-                <Route path="/Administrator" element={isAdmin ? <Administrator /> : <Navigate to="/" />} />
-                <Route path="/CreateProduct" element={isAdmin ? <CreateProduct /> : <Navigate to="/" />} />
+                <Route path="/Administrator" element={admin ? <Administrator /> : <Navigate to="/" />} />
+                <Route path="/CreateProduct" element={admin ? <CreateProduct /> : <Navigate to="/" />} />
                 
                 {/* Aggiungi queste route per gestire eventuali variazioni del percorso */}
                 {/* <Route path="/orderadmin" element={<Navigate to="/order-admin" replace />} />
@@ -64,7 +63,7 @@ const AppRoutes = () => {
                         <div className="alert alert-warning">
                             <h4>Pagina non trovata</h4>
                             <p>URL: {window.location.pathname}</p>
-                            <p>Stato admin: {isAdmin ? "Sì" : "No"}</p>
+                            <p>Stato admin: {admin ? "Sì" : "No"}</p>
                             <p>Utente: {user ? "Autenticato" : "Non autenticato"}</p>
                         </div>
                         <button className="btn btn-primary" onClick={() => window.history.back()}>

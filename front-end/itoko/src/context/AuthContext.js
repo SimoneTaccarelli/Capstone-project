@@ -11,8 +11,9 @@ import {
   getAuth
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
+
 import axios from 'axios';
-import { set } from 'mongoose';
+
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1';
 const AuthContext = createContext();
@@ -27,6 +28,8 @@ export const AuthProvider = ({ children }) => {
   const [admin, setAdmin] = useState(false);
   const auth = getAuth();
 
+  
+
   // Monitora autenticazione e verifica ruolo admin
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -40,16 +43,15 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        // Ottieni il token e verifica il ruolo admin
-        const idTokenResult = await user.getIdTokenResult();
-        const isAdmin = idTokenResult.claims.role === 'admin';
-        setAdmin(isAdmin);
+        // Forza il refresh del token per ottenere i custom claims aggiornati
+        const idToken = await user.getIdToken(true); // Forza il refresh del token
+        console.log('ID Token (refreshed):', idToken); // Log del token JWT aggiornato
 
-        if (isAdmin) {
-          console.log("L'utente è un amministratore");
-        } else {
-          console.log("L'utente non è un amministratore");
-        }
+        const response = await axios.post(`${API_URL}/auth/verify-admin`, {}, {
+          headers: { Authorization: `Bearer ${idToken}` }
+        });
+
+        setAdmin(response.data.admin === true);
       } catch (error) {
         console.error("Errore durante la verifica del ruolo admin:", error);
         setAdmin(false);

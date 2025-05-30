@@ -224,18 +224,17 @@ export const updateUser = async (req, res) => {
 // Verifica admin
 export async function isAdministrator(request, response, next) {
   const authHeader = request.headers.authorization;
-  console.log('Authorization Header:', authHeader); // Log dell'header Authorization
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return response.status(401).json({ error: "Unauthorized" });
   }
 
   const idToken = authHeader.split('Bearer ')[1];
-  console.log('ID Token:', idToken); // Log del token JWT
+  
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
-    console.log('Decoded Token:', decodedToken); // Log del token decodificato
+   
 
     if (decodedToken.admin === true) {
       request.user = decodedToken;
@@ -244,7 +243,7 @@ export async function isAdministrator(request, response, next) {
       return response.status(403).json({ error: "Access denied" });
     }
   } catch (error) {
-    console.error('Error verifying token:', error.message);
+   
     response.status(401).json({ error: error.message });
   }
 }

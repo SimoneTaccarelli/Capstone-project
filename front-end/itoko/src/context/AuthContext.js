@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
       try {
         // Forza il refresh del token per ottenere i custom claims aggiornati
         const idToken = await user.getIdToken(true); // Forza il refresh del token
-        console.log('ID Token (refreshed):', idToken); // Log del token JWT aggiornato
+       
 
         const response = await axios.post(`${API_URL}/auth/verify-admin`, {}, {
           headers: { Authorization: `Bearer ${idToken}` }

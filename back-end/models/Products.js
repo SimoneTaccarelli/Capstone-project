@@ -12,9 +12,9 @@ const productSchema = new mongoose.Schema({
     type: Number, 
     required: true 
   },
-  imageUrl: [{ 
-    type: String 
-  }],
+  imageUrl:{
+    type: [String]
+  },
   category: { 
     type: String 
   }, // es: "Anime", "Manga"

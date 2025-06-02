@@ -3,9 +3,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../config/config";
+import { useAuth } from "../context/AuthContext"; // Importa il contesto Auth
 
 const CreateGraphic = () => {
     const navigate = useNavigate();
+    const { currentUser } = useAuth(); // Ottieni l'utente corrente dal contesto Auth
 
     // Stati per gestire i dati del form
     const [graphicName, setGraphicName] = useState("");
@@ -59,9 +61,13 @@ const CreateGraphic = () => {
             setIsSubmitting(true);
             setError(null);
 
-            await axios.post(`${API_URL}/graphics`, formData, {
+            // Ottieni il token dell'utente corrente
+            const token = await currentUser.getIdToken();
+
+            await axios.post(`${API_URL}/graphicUpload`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
+                    Authorization: `Bearer ${token}`, // Aggiungi il token nell'header
                 },
             });
 

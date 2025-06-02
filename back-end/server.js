@@ -8,6 +8,7 @@ import fileRouter from './routes/file.js';
 import productRouter from './routes/product.js';
 import stripeRouter from './routes/stripe.js';
 import orderRouter from './routes/order.js';
+import graphicRouter from './routes/graphic.js';
 
 
 
@@ -29,6 +30,8 @@ server.use('/api/v1' , fileRouter)
 server.use('/api/v1' , productRouter)
 server.use('/api/v1/stripe' , stripeRouter)
 server.use('/api/v1/order' , orderRouter)
+server.use('/api/v1' , graphicRouter)
+
 
 
 admin.initializeApp({

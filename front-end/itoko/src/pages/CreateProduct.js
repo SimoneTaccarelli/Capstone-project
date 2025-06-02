@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useProducts } from "../context/ProductContext";
 import axios from "axios";
 import { API_URL } from "../config/config";
+import { useAuth } from "../context/AuthContext"; // Importa il contesto Auth
 
 /**
  * Componente per creare un nuovo prodotto nell'e-commerce
@@ -12,6 +13,7 @@ import { API_URL } from "../config/config";
 const CreateProduct = () => {
     const { addProduct } = useProducts(); // Usa la funzione addProduct dal contesto
     const navigate = useNavigate();
+    const { currentUser } = useAuth(); // Ottieni l'utente corrente dal contesto Auth
 
     // Stati per gestire i dati del form
     const [productName, setProductName] = useState("");
@@ -74,21 +76,23 @@ const CreateProduct = () => {
             return;
         }
 
-        const productData = {
-            name: productName,
-            description: productDescription,
-            price: productPrice,
-            category: productCategory,
-            type: productType,
-            graphic: productGraphic,
-            images: productImages,
-        };
+        const formData = new FormData();
+        formData.append("name", productName);
+        formData.append("description", productDescription);
+        formData.append("price", productPrice);
+        formData.append("category", productCategory);
+        formData.append("type", productType);
+        formData.append("graphic", productGraphic);
+        productImages.forEach(image => formData.append("images", image)); // Aggiungi i file
 
         try {
-            setIsSubmitting(true);
-            setError(null);
-
-            await addProduct(productData); // Usa la funzione addProduct dal contesto
+            const token = await currentUser.getIdToken(); // Ottieni il token dell'utente corrente
+            const response = await axios.post(`${API_URL}/product`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data", // Tipo di contenuto corretto
+                    Authorization: `Bearer ${token}`, // Aggiungi il token nell'header
+                },
+            });
             navigate("/administrator");
         } catch (err) {
             setError("Errore durante la creazione del prodotto: " + (err.response?.data?.error || err.message));
@@ -189,6 +193,7 @@ const CreateProduct = () => {
                             <Form.Group controlId="productImages" className="mb-3">
                                 <Form.Label>Immagini Prodotto</Form.Label>
                                 <Form.Control 
+                                    name="images"
                                     type="file" 
                                     multiple 
                                     accept="image/*"

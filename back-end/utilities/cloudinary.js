@@ -121,9 +121,9 @@ export {
   cloudinary, 
   productUpload, 
   avatarUpload, 
-  logoUpload,        // Nuovo export
-  frontImageUpload,  // Nuovo export
-  designUpload,      // Puoi rimuoverlo se non lo utilizzi più
+  logoUpload,        
+  frontImageUpload,  
+  designUpload,      
   upload,
   graphicUpload
 

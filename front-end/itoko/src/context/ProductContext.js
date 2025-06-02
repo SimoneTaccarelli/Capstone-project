@@ -41,6 +41,23 @@ export const ProductProvider = ({ children }) => {
     fetchProducts();
   }, []);
 
+  // Carica tutte le grafiche
+  const fetchGraphics = async () =>{
+    setLoading(true)
+    try{
+      const response = await axios.get(`${API_URL}/graphics`);
+      setGraphics(response.data);
+    }
+    catch (error) {
+      setError("Errore nel caricamento delle grafiche");
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    fetchGraphics();
+  }, []);
+
   return (
     <ProductContext.Provider value={{ 
       products, 

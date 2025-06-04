@@ -5,11 +5,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Cart from '../modal/Cart.js';
 import { useDesign } from '../context/DesignContext';
+import useAdminCheck from "../hooks/useAdminCheck";
 // import { useOrder } from '../context/OrderContext.js';
 
 function MyNavbar() {
   const { logout, userData, currentUser, admin } = useAuth();
-  const isAdmin = userData && userData.role === "Admin";
+  const { isAdmin } = useAdminCheck();
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const { logo } = useDesign();
@@ -75,7 +76,7 @@ function MyNavbar() {
             <Nav.Link as={Link} to="/">Home</Nav.Link>
             <Nav.Link as={Link} to="/who-we-are">Chi siamo</Nav.Link>
             <Nav.Link as={Link} to="/privacy-and-policy">Privacy&Policy</Nav.Link>
-            {admin && (
+            {isAdmin && (
               <Nav.Link as={Link} to="/administrator">Amministrazione</Nav.Link>
             )}
           </Nav>

@@ -16,7 +16,8 @@ router.put(
   userController.updateUser
 );
 router.delete("/auth/cancelUser", userController.verifyToken, userController.eliminateUser);
-router.post('/auth/verify-admin', userController.isAdministrator);
+router.get('/auth/verify-admin', userController.isAdministrator);
+
 
 
 

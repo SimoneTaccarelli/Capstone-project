@@ -6,13 +6,20 @@ import { API_URL } from '../config/config';
 const ProductContext = createContext();
 
 export const ProductProvider = ({ children }) => {
-  const [products, setProducts] = useState([]);
-  const [graphics, setGraphics] = useState([]);
-  const [pagination, setPagination] = useState({
+  
+  const [paginationProduct, setPaginationProduct] = useState({
     currentPage: 1,
     totalPages: 1,
     totalProducts: 0,
+    products : [],
     productsPerPage: 8,
+  });
+  const [paginationGraphic, setPaginationGraphic] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalGraphics: 0,
+    graphics:[],
+    graphicsPerPage: 8,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,8 +32,10 @@ export const ProductProvider = ({ children }) => {
       const paginationHeader = response.headers['x-pagination'];
       if (paginationHeader) {
         const parsedPagination = JSON.parse(paginationHeader);
-        setPagination(parsedPagination.pagination); // Salva la paginazione
-        setProducts(parsedPagination.products); // Salva i prodotti
+        setPaginationProduct({
+          ...parsedPagination,
+          products: response.data, // Salva i prodotti direttamente dalla risposta
+        });
       } else {
         setError("Errore nella gestione della paginazione");
       }
@@ -37,32 +46,37 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   // Carica tutte le grafiche
-  const fetchGraphics = async () =>{
-    setLoading(true)
-    try{
-      const response = await axios.get(`${API_URL}/graphics`);
-      setGraphics(response.data);
-    }
-    catch (error) {
+  const fetchGraphics = async (page = 1, limit = 8) => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API_URL}/graphics?page=${page}&limit=${limit}`);
+      const paginationHeader = response.headers['x-pagination-graphic'];
+      if (paginationHeader) {
+        const parsedPagination = JSON.parse(paginationHeader);
+        setPaginationGraphic({
+          ...parsedPagination,
+          graphics: parsedPagination.graphics, // Salva le grafiche direttamente dalla paginazione
+        });
+      } else {
+        setError("Errore nella gestione della paginazione delle grafiche");
+      }
+    } catch (error) {
       setError("Errore nel caricamento delle grafiche");
     } finally {
       setLoading(false);
     }
-  }
+  };
+
   useEffect(() => {
+    fetchProducts();
     fetchGraphics();
   }, []);
 
   return (
     <ProductContext.Provider value={{ 
-      products, 
-      graphics, 
-      pagination, 
+      paginationProduct, 
+      paginationGraphic,
       loading, 
       error, 
       fetchProducts 
@@ -73,3 +87,4 @@ export const ProductProvider = ({ children }) => {
 };
 
 export const useProducts = () => useContext(ProductContext);
+

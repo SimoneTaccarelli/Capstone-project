@@ -25,44 +25,28 @@ export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [admin, setAdmin] = useState(false);
   const auth = getAuth();
 
-  
-
-  // Monitora autenticazione e verifica ruolo admin
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
 
       if (!user) {
         setUserData(null);
-        setAdmin(false); // Reset ruolo admin
         setLoading(false);
         return;
       }
 
       try {
-        // Forza il refresh del token per ottenere i custom claims aggiornati
         const idToken = await user.getIdToken(true); // Forza il refresh del token
-
-        
 
         // Recupera i dati utente dal backend
         const userResponse = await axios.get(`${API_URL}/auth/me`, {
           headers: { Authorization: `Bearer ${idToken}` }
         });
         setUserData(userResponse.data); // Aggiorna lo stato userData
-
-        // Verifica il ruolo admin
-        const adminResponse = await axios.post(`${API_URL}/auth/verify-admin`, {}, {
-          headers: { Authorization: `Bearer ${idToken}` }
-        });
-       
-        setAdmin(adminResponse.data.admin === true);
       } catch (error) {
-        console.error("Errore durante la verifica del ruolo admin:", error);
-        setAdmin(false);
+        console.error("Errore durante il recupero dei dati utente:", error);
       } finally {
         setLoading(false);
       }
@@ -270,6 +254,7 @@ export const AuthProvider = ({ children }) => {
 
   const avatarUrl = `https://ui-avatars.com/api/?background=8c00ff&color=fff&name=${userData?.firstName || 'U'}+${userData?.lastName || 'N'}`;
 
+  console.log('currentUser:', currentUser);
   
 
   return (
@@ -285,7 +270,6 @@ export const AuthProvider = ({ children }) => {
       loginWithGoogle,
       updateUserProfile,
       deleteUserAccount,
-      admin // Aggiunto admin al contesto
     }}>
       {children}
     </AuthContext.Provider>

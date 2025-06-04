@@ -7,7 +7,7 @@ const router = Router();
 
 router.get('/product', productController.getAllProducts);
 router.get('/product/:productId', productController.getProductById);
-router.post('/product', productUpload.array('images', 5), (req, res, next) => {
+router.post('/product',userController.isAdminMiddleware, productUpload.array('images', 5), (req, res, next) => {
     console.log("Files ricevuti:", req.files);
     next();
 }, productController.createProduct);

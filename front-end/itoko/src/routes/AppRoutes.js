@@ -15,18 +15,17 @@ import CreateGraphic from "../pages/CreateGraphic";
 // import OrderAdmin from "../pages/OrderAdmin";
 // import OrderUser from "../pages/OrderUser";
 // import Order from "../pages/Order";
-import { useEffect } from "react";
+import useAdminCheck from "../hooks/useAdminCheck";
 
 const AppRoutes = () => {
     const { userData, loading, admin } = useAuth();
+    const { isAdmin, loading: adminLoading } = useAdminCheck();
     const user = userData && userData._id;
 
-    
+  
 
-    
-
-    // Se stiamo ancora caricando i dati di autenticazione, mostra un indicatore di caricamento
-    if (loading) {
+    // Se stiamo ancora caricando i dati di autenticazione o di admin, mostra un indicatore di caricamento
+    if (loading || adminLoading) {
       return (
         <div className="d-flex justify-content-center align-items-center vh-100">
           <div className="spinner-border text-primary" role="status">
@@ -55,9 +54,9 @@ const AppRoutes = () => {
                 <Route path="/profile" element={user ? <ProfileUser /> : <Navigate to="/" />} />
                 
                 {/* Route admin */}
-                <Route path="/Administrator" element={admin ? <Administrator /> : <Navigate to="/" />} />
-                <Route path="/CreateProduct" element={admin ? <CreateProduct /> : <Navigate to="/" />} />
-                <Route path="/CreateGraphic" element={admin ? <CreateGraphic /> : <Navigate to="/" />} />
+                <Route path="/Administrator" element={isAdmin ? <Administrator /> : <Navigate to="/" />} />
+                <Route path="/CreateProduct" element={isAdmin ? <CreateProduct /> : <Navigate to="/" />} />
+                <Route path="/CreateGraphic" element={isAdmin ? <CreateGraphic /> : <Navigate to="/" />} />
                 {/* Aggiungi queste route per gestire eventuali variazioni del percorso */}
                 {/* <Route path="/orderadmin" element={<Navigate to="/order-admin" replace />} />
                 <Route path="/OrderAdmin" element={<Navigate to="/order-admin" replace />} /> */}

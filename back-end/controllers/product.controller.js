@@ -1,48 +1,37 @@
 import Product from '../models/Products.js';
 
 export async function getAllProducts(request, response, next) {
-    try {
-        const products = await Product.find().populate('graphic', 'name');
-        if (!products || products.length === 0) {
-            return response.status(404).json({ error: 'No products found' });
-        }
+  try {
+    const products = await Product.find().populate('graphic', 'name');
+    console.log("Prodotti recuperati dal database:", products); // Log dei prodotti recuperati
 
-        // Filtra i prodotti in base ai parametri di query
-        const { category, type } = request.query;
-        let filteredProducts = products;
-
-        if (category) {
-            filteredProducts = filteredProducts.filter(product => product.category.toLowerCase().includes(category.toLowerCase()));
-        }
-
-        if (type) {
-            filteredProducts = filteredProducts.filter(product => product.type === type);
-        }
-
-        // Logica di paginazione
-        const { page = 1, limit = 8 } = request.query;
-        const startIndex = (page - 1) * limit;
-        const endIndex = page * limit;
-        const totalProducts = filteredProducts.length;
-        const totalPages = Math.ceil(totalProducts / limit);
-        const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-
-        const pagination = {
-            totalProducts,
-            totalPages,
-            currentPage: parseInt(page),
-            productsPerPage: parseInt(limit),
-        };
-
-        response.set('X-Pagination', JSON.stringify({
-            products: paginatedProducts,
-            pagination: pagination
-        }));
-
-        response.status(200).json(paginatedProducts);
-    } catch (error) {
-        response.status(500).json({ error: error.message });
+    if (!products || products.length === 0) {
+      return response.status(404).json({ error: 'No products found' });
     }
+
+    // Logica di paginazione
+    const { page = 1, limit = 8 } = request.query;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const totalProducts = products.length;
+    const totalPages = Math.ceil(totalProducts / limit);
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    console.log("Prodotti paginati:", paginatedProducts); // Log dei prodotti paginati
+
+    const pagination = {
+      totalProducts,
+      totalPages,
+      currentPage: parseInt(page),
+      productsPerPage: parseInt(limit),
+    };
+
+    response.set('X-Pagination', JSON.stringify(pagination));
+    response.status(200).json(paginatedProducts);
+  } catch (error) {
+    console.error("Errore durante il recupero dei prodotti:", error);
+    response.status(500).json({ error: error.message });
+  }
 }
 
 export async function getProductById(request, response, next) {

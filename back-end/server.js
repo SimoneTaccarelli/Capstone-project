@@ -15,6 +15,7 @@ import graphicRouter from './routes/graphic.js';
 
 
 
+
 // Load environment variables
 dotenv.config();
 
@@ -23,7 +24,7 @@ dotenv.config();
 const server = express();
 server.use(express.json());
 server.use(cors({
-  exposedHeaders: ['X-Pagination', 'Content-Type']
+  exposedHeaders: ['X-Pagination', 'Content-Type', 'X-Pagination-Graphic']
 }))
 server.use('/api/v1/' , authRouter)
 server.use('/api/v1' , fileRouter)
@@ -31,6 +32,7 @@ server.use('/api/v1' , productRouter)
 server.use('/api/v1/stripe' , stripeRouter)
 server.use('/api/v1/order' , orderRouter)
 server.use('/api/v1' , graphicRouter)
+
 
 
 

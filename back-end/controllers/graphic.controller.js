@@ -114,7 +114,7 @@ export const getAllGraphics = async (req, res) => {
             currentPage: parseInt(page),
             graphicsPerPage: parseInt(limit),
         };
-        res.set('X-Pagination', JSON.stringify({
+        res.set('X-Pagination-Graphic', JSON.stringify({
             graphics: paginatedGraphics,
             pagination: pagination
         })); // Imposta l'header di paginazione

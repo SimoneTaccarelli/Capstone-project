@@ -3,22 +3,19 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../config/config";
-import { useAuth } from "../context/AuthContext"; // Importa il contesto Auth
+import { useAuth } from "../context/AuthContext";
 
 const CreateGraphic = () => {
     const navigate = useNavigate();
-    const { currentUser } = useAuth(); // Ottieni l'utente corrente dal contesto Auth
+    const { currentUser } = useAuth();
 
-    // Stati per gestire i dati del form
     const [graphicName, setGraphicName] = useState("");
-    const [graphicDescription, setGraphicDescription] = useState("");
     const [graphicTags, setGraphicTags] = useState("");
     const [graphicImages, setGraphicImages] = useState([]);
     const [imagePreview, setImagePreview] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
 
-    // Gestione nuove immagini
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         setGraphicImages([...graphicImages, ...files]);
@@ -27,7 +24,6 @@ const CreateGraphic = () => {
         setImagePreview([...imagePreview, ...newPreviews]);
     };
 
-    // Rimuovi immagine
     const removeImage = (index) => {
         const updatedImages = [...graphicImages];
         updatedImages.splice(index, 1);
@@ -39,7 +35,6 @@ const CreateGraphic = () => {
         setImagePreview(updatedPreviews);
     };
 
-    // Gestisce la creazione di una nuova grafica
     const handleCreateGraphic = async (e) => {
         e.preventDefault();
 
@@ -50,24 +45,19 @@ const CreateGraphic = () => {
 
         const formData = new FormData();
         formData.append("name", graphicName);
-        formData.append("description", graphicDescription);
-        formData.append("tags", graphicTags.split(",").map(tag => tag.trim())); // Divide i tag separati da virgola
-
-        graphicImages.forEach(file => {
-            formData.append("images", file);
-        });
+        formData.append("tags", graphicTags.split(",").map(tag => tag.trim()));
+        graphicImages.forEach(file => formData.append("images", file));
 
         try {
             setIsSubmitting(true);
             setError(null);
 
-            // Ottieni il token dell'utente corrente
             const token = await currentUser.getIdToken();
 
             await axios.post(`${API_URL}/graphicUpload`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
-                    Authorization: `Bearer ${token}`, // Aggiungi il token nell'header
+                    Authorization: `Bearer ${token}`,
                 },
             });
 
@@ -88,7 +78,6 @@ const CreateGraphic = () => {
 
                 <Form onSubmit={handleCreateGraphic}>
                     <Row className="g-4">
-                        {/* Colonna sinistra */}
                         <Col md={6}>
                             <Form.Group controlId="graphicName" className="mb-3">
                                 <Form.Label>Nome Grafica</Form.Label>
@@ -98,17 +87,6 @@ const CreateGraphic = () => {
                                     value={graphicName} 
                                     onChange={(e) => setGraphicName(e.target.value)} 
                                     required
-                                />
-                            </Form.Group>
-
-                            <Form.Group controlId="graphicDescription" className="mb-3">
-                                <Form.Label>Descrizione</Form.Label>
-                                <Form.Control 
-                                    as="textarea" 
-                                    rows={4} 
-                                    placeholder="Inserisci descrizione grafica" 
-                                    value={graphicDescription} 
-                                    onChange={(e) => setGraphicDescription(e.target.value)} 
                                 />
                             </Form.Group>
 
@@ -123,7 +101,6 @@ const CreateGraphic = () => {
                             </Form.Group>
                         </Col>
 
-                        {/* Colonna destra */}
                         <Col md={6}>
                             <Form.Group controlId="graphicImages" className="mb-3">
                                 <Form.Label>Immagini Grafica</Form.Label>
@@ -135,7 +112,6 @@ const CreateGraphic = () => {
                                 />
                             </Form.Group>
 
-                            {/* Anteprima immagini */}
                             {imagePreview.length > 0 && (
                                 <div className="mt-4">
                                     <h5 className="mb-3">Anteprima Immagini</h5>
@@ -164,7 +140,6 @@ const CreateGraphic = () => {
                         </Col>
                     </Row>
 
-                    {/* Pulsante submit */}
                     <div className="text-center mt-4">
                         <Button 
                             type="submit" 

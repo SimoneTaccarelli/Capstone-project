@@ -24,14 +24,13 @@ export const getGraphicById = async (req, res) => {
 };
 
 export async function graphicUpload(request, response) {
-    const imageUrls = request.files.map(file => file.path); // URL generati da Cloudinary
+    const imageUrls = request.files.map(file => file.path);
 
     try {
         const newGraphic = new Graphic({
             name: request.body.name,
-            description: request.body.description,
             tags: request.body.tags ? request.body.tags.split(',').map(tag => tag.trim()) : [],
-            imageUrl: imageUrls, // Assicurati che questo campo corrisponda al modello
+            imageUrl: imageUrls,
         });
         const savedGraphic = await newGraphic.save();
         response.status(201).json(savedGraphic);
@@ -43,20 +42,14 @@ export async function graphicUpload(request, response) {
 
 export async function modifyGraphic(request, response) {
     const { graphicId } = request.params;
-    const { name, description, tags } = request.body;
+    const { name, tags } = request.body;
 
-    if (!request.files || request.files.length === 0) {
-        return response.status(400).json({ error: "È necessario caricare almeno un'immagine" });
-    }
+    const imageUrls = request.files.map(file => file.path);
 
-    const imageUrls = request.files.map(file => file.path); // Assuming multiple files are uploaded
-
-    // Crea una costante per raccogliere i campi da aggiornare
     const updateData = {
         name,
-        description,
         tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        imageUrls // Salva un array di URL delle immagini
+        imageUrl: imageUrls,
     };
 
     try {
@@ -66,8 +59,8 @@ export async function modifyGraphic(request, response) {
 
         const updatedGraphic = await Graphic.findByIdAndUpdate(
             graphicId,
-            { $set: updateData }, // Usa $set per aggiornare solo i campi specificati
-            { new: true } // Restituisci il documento aggiornato
+            { $set: updateData },
+            { new: true }
         );
         if (!updatedGraphic) return res.status(404).json({ error: 'Graphic not found' });
         response.status(200).json(updatedGraphic);
@@ -86,8 +79,7 @@ export async function eliminateGraphic(request, response) {
 
         const deletedGraphic = await Graphic.findByIdAndDelete(graphicId);
         if (!deletedGraphic) return response.status(404).json({ error: 'Graphic not found' });
-        
-        // Elimina anche i prodotti associati
+
         await Product.deleteMany({ graphic: graphicId });
 
         response.status(200).json({ message: 'Graphic and associated products deleted successfully' });
@@ -98,15 +90,14 @@ export async function eliminateGraphic(request, response) {
 
 export const getAllGraphics = async (req, res) => {
     try {
-        const graphics = await Graphic.find(); // Recupera tutte le grafiche dal database
-        
+        const graphics = await Graphic.find();
 
-        const {page =1 , limit = 8 }= req.query; // Imposta i parametri di paginazione
-        const startIndex = (page - 1) * limit; // Calcola l'indice di inizio
-        const endIndex = page * limit; // Calcola l'indice di fine
-        const totalGraphics = graphics.length; // Ottiene il numero totale di grafiche
-        const totalPages = Math.ceil(totalGraphics / limit); // Calcola il numero totale di pagine
-        const paginatedGraphics = graphics.slice(startIndex, endIndex); // Applica la paginazione   
+        const { page = 1, limit = 8 } = req.query;
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+        const totalGraphics = graphics.length;
+        const totalPages = Math.ceil(totalGraphics / limit);
+        const paginatedGraphics = graphics.slice(startIndex, endIndex);
 
         const pagination = {
             totalGraphics,
@@ -114,15 +105,15 @@ export const getAllGraphics = async (req, res) => {
             currentPage: parseInt(page),
             graphicsPerPage: parseInt(limit),
         };
+
         res.set('X-Pagination-Graphic', JSON.stringify({
             graphics: paginatedGraphics,
             pagination: pagination
-        })); // Imposta l'header di paginazione
+        }));
 
-        res.status(200).json(paginatedGraphics); // Restituisce le grafiche paginate
-        3.
+        res.status(200).json(paginatedGraphics);
     } catch (error) {
         console.error("Errore durante il recupero delle grafiche:", error);
-        res.status(500).json({ error: error.message }); // Restituisce un errore con status 500
+        res.status(500).json({ error: error.message });
     }
 };

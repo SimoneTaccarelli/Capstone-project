@@ -1,26 +1,24 @@
-import { Form, Container, Row, Col, Button } from "react-bootstrap";
+import { Form, Container, Row, Col, Button, Spinner } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProducts } from "../context/ProductContext";
 import axios from "axios";
 import { API_URL } from "../config/config";
-import { useAuth } from "../context/AuthContext"; // Importa il contesto Auth
+import { useAuth } from "../context/AuthContext";
 
 /**
  * Componente per creare un nuovo prodotto nell'e-commerce
  * Permette l'inserimento di dati testuali e immagini
  */
 const CreateProduct = () => {
-    const { addProduct } = useProducts(); // Usa la funzione addProduct dal contesto
     const navigate = useNavigate();
-    const { currentUser } = useAuth(); // Ottieni l'utente corrente dal contesto Auth
-
-    // Stati per gestire i dati del form
-    const [productName, setProductName] = useState("");
+    const { currentUser } = useAuth();
     const [productDescription, setProductDescription] = useState("");
     const [productPrice, setProductPrice] = useState("");
     const [productCategory, setProductCategory] = useState("");
     const [productType, setProductType] = useState(""); // T-shirt o Hoodie
+    const [productColors, setProductColors] = useState([]); // Array per selezionare più colori
+    const [productSizes, setProductSizes] = useState([]); // Array per selezionare più taglie
     const [productGraphic, setProductGraphic] = useState(""); // ID della grafica
     const [graphics, setGraphics] = useState([]); // Lista delle grafiche disponibili
     const [productImages, setProductImages] = useState([]);
@@ -71,23 +69,26 @@ const CreateProduct = () => {
             return;
         }
 
-        if (!productType || !productGraphic) {
-            setError("È necessario selezionare il tipo di prodotto e una grafica");
+        if (!productType || !productGraphic || productColors.length === 0 || productSizes.length === 0) {
+            setError("È necessario selezionare il tipo di prodotto, una grafica, almeno un colore e una taglia");
             return;
         }
 
         const formData = new FormData();
-        formData.append("name", productName);
+        formData.append("name", graphics.find(graphic => graphic._id === productGraphic)?.name || ""); // Nome basato sulla grafica
         formData.append("description", productDescription);
         formData.append("price", productPrice);
         formData.append("category", productCategory);
         formData.append("type", productType);
+        productColors.forEach(color => formData.append("color", color)); // Aggiungi più colori
+        productSizes.forEach(size => formData.append("size", size)); // Aggiungi più taglie
         formData.append("graphic", productGraphic);
         productImages.forEach(image => formData.append("images", image)); // Aggiungi i file
 
         try {
+            setIsSubmitting(true); // Mostra lo spinner
             const token = await currentUser.getIdToken(); // Ottieni il token dell'utente corrente
-            const response = await axios.post(`${API_URL}/product`, formData, {
+            await axios.post(`${API_URL}/product`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data", // Tipo di contenuto corretto
                     Authorization: `Bearer ${token}`, // Aggiungi il token nell'header
@@ -97,8 +98,30 @@ const CreateProduct = () => {
         } catch (err) {
             setError("Errore durante la creazione del prodotto: " + (err.response?.data?.error || err.message));
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false); // Nascondi lo spinner
         }
+    };
+
+    const handleColorChange = (e) => {
+        const selectedColor = e.target.value;
+        if (!productColors.includes(selectedColor)) {
+            setProductColors([...productColors, selectedColor]);
+        }
+    };
+
+    const removeColor = (color) => {
+        setProductColors(productColors.filter(c => c !== color));
+    };
+
+    const handleSizeChange = (e) => {
+        const selectedSize = e.target.value;
+        if (!productSizes.includes(selectedSize)) {
+            setProductSizes([...productSizes, selectedSize]);
+        }
+    };
+
+    const removeSize = (size) => {
+        setProductSizes(productSizes.filter(s => s !== size));
     };
 
     return (
@@ -112,17 +135,6 @@ const CreateProduct = () => {
                     <Row className="g-4">
                         {/* Colonna sinistra */}
                         <Col md={6}>
-                            <Form.Group controlId="productName" className="mb-3">
-                                <Form.Label>Nome Prodotto</Form.Label>
-                                <Form.Control 
-                                    type="text" 
-                                    placeholder="Inserisci nome prodotto" 
-                                    value={productName} 
-                                    onChange={(e) => setProductName(e.target.value)} 
-                                    required
-                                />
-                            </Form.Group>
-
                             <Form.Group controlId="productDescription" className="mb-3">
                                 <Form.Label>Descrizione</Form.Label>
                                 <Form.Control 
@@ -146,10 +158,7 @@ const CreateProduct = () => {
                                     required
                                 />
                             </Form.Group>
-                        </Col>
 
-                        {/* Colonna destra */}
-                        <Col md={6}>
                             <Form.Group controlId="productCategory" className="mb-3">
                                 <Form.Label>Categoria</Form.Label>
                                 <Form.Control 
@@ -160,7 +169,10 @@ const CreateProduct = () => {
                                     required
                                 />
                             </Form.Group>
+                        </Col>
 
+                        {/* Colonna destra */}
+                        <Col md={6}>
                             <Form.Group controlId="productType" className="mb-3">
                                 <Form.Label>Tipo di Prodotto</Form.Label>
                                 <Form.Select 
@@ -172,6 +184,46 @@ const CreateProduct = () => {
                                     <option value="T-shirt">T-shirt</option>
                                     <option value="Hoodie">Hoodie</option>
                                 </Form.Select>
+                            </Form.Group>
+
+                            <Form.Group controlId="productColor" className="mb-3">
+                                <Form.Label>Colore</Form.Label>
+                                <Form.Select 
+                                    onChange={handleColorChange} 
+                                    required
+                                >
+                                    <option value="">Seleziona colore</option>
+                                    {["Black", "Water Blue", "Beige", "Light Gray", "Light Purple", "Orange", "Rose Red", "Red", "Light Blue", "Light Brown", "Blue Jeans", "Dark Blue", "Purple Haze", "Dark Green", "Gray Green", "Pirate Gray"].map(color => (
+                                        <option key={color} value={color}>{color}</option>
+                                    ))}
+                                </Form.Select>
+                                <div className="mt-2">
+                                    {productColors.map(color => (
+                                        <span key={color} className="badge bg-primary me-2">
+                                            {color} <Button variant="danger" size="sm" onClick={() => removeColor(color)}>x</Button>
+                                        </span>
+                                    ))}
+                                </div>
+                            </Form.Group>
+
+                            <Form.Group controlId="productSize" className="mb-3">
+                                <Form.Label>Taglia</Form.Label>
+                                <Form.Select 
+                                    onChange={handleSizeChange} 
+                                    required
+                                >
+                                    <option value="">Seleziona taglia</option>
+                                    {["S", "M", "L", "XL", "XXL"].map(size => (
+                                        <option key={size} value={size}>{size}</option>
+                                    ))}
+                                </Form.Select>
+                                <div className="mt-2">
+                                    {productSizes.map(size => (
+                                        <span key={size} className="badge bg-primary me-2">
+                                            {size} <Button variant="danger" size="sm" onClick={() => removeSize(size)}>x</Button>
+                                        </span>
+                                    ))}
+                                </div>
                             </Form.Group>
 
                             <Form.Group controlId="productGraphic" className="mb-3">
@@ -241,7 +293,7 @@ const CreateProduct = () => {
                         >
                             {isSubmitting ? (
                                 <>
-                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <Spinner animation="border" size="sm" className="me-2" />
                                     Creazione in corso...
                                 </>
                             ) : "Crea Prodotto"}

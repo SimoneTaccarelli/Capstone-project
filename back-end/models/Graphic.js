@@ -5,9 +5,6 @@ const graphicSchema = new mongoose.Schema({
         type: String, 
         required: true 
     },
-    description: { 
-        type: String 
-    },
     tags: [String], // ad esempio "One Piece", "Naruto"
     imageUrl: {
         type: [String]

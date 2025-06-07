@@ -41,30 +41,35 @@ export async function graphicUpload(request, response) {
 }
 
 export async function modifyGraphic(request, response) {
-    const { graphicId } = request.params;
-    const { name, tags } = request.body;
-
-    const imageUrls = request.files.map(file => file.path);
-
-    const updateData = {
-        name,
-        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        imageUrl: imageUrls,
-    };
-
     try {
-        if (!mongoose.Types.ObjectId.isValid(graphicId)) {
-            return response.status(400).json({ error: "ID grafica non valido" });
-        }
+        const { graphicId } = request.params;
+        const { name, tags } = request.body;
+
+        const imageUrls = request.files ? request.files.map(file => file.path) : [];
+
+        const updateData = {
+            name,
+            tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+            imageUrl: imageUrls,
+        };
 
         const updatedGraphic = await Graphic.findByIdAndUpdate(
             graphicId,
             { $set: updateData },
             { new: true }
         );
-        if (!updatedGraphic) return res.status(404).json({ error: 'Graphic not found' });
+
+        if (!updatedGraphic) return response.status(404).json({ error: 'Graphic not found' });
+
+        // Aggiorna i prodotti associati alla grafica
+        await Product.updateMany(
+            { graphic: graphicId },
+            { $set: { name: updatedGraphic.name } }
+        );
+
         response.status(200).json(updatedGraphic);
     } catch (error) {
+        console.error('Errore durante la modifica della grafica:', error);
         response.status(500).json({ error: error.message });
     }
 }

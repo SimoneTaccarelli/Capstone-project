@@ -89,15 +89,76 @@ export const createProduct = async (req, res) => {
 export async function updateProduct(request, response, next) {
   try {
     const { productId } = request.params;
-    const { name, description, price, category, type, color, size, graphic } = request.body;
+    const { name, description, price, category, type, graphic } = request.body;
+    let { color, size } = request.body;
     let existingImages = [];
 
-    // Parse JSON string to array
+    // Parse JSON string to array for existingImages
     if (request.body.existingImages) {
       try {
         existingImages = JSON.parse(request.body.existingImages);
       } catch (e) {
         return response.status(400).json({ error: 'Errore nel formato delle immagini esistenti' });
+      }
+    }
+
+    // Parse color if it's a string
+    if (color) {
+      try {
+        // Se è una stringa, prova a parsarla come JSON
+        if (typeof color === 'string') {
+          color = JSON.parse(color);
+        }
+        // Assicurati che sia un array
+        if (!Array.isArray(color)) {
+          color = [color];
+        }
+        // Se gli elementi dell'array sono ancora stringhe JSON, parsali
+        color = color.map(item => {
+          if (typeof item === 'string' && (item.startsWith('[') || item.startsWith('"'))) {
+            try {
+              return JSON.parse(item);
+            } catch (e) {
+              return item;
+            }
+          }
+          return item;
+        });
+        // Appiattisci l'array nel caso ci siano array nested
+        color = color.flat();
+      } catch (e) {
+        // Se il parsing fallisce, usa la stringa come un singolo valore
+        color = [color];
+      }
+    }
+
+    // Parse size if it's a string
+    if (size) {
+      try {
+        // Se è una stringa, prova a parsarla come JSON
+        if (typeof size === 'string') {
+          size = JSON.parse(size);
+        }
+        // Assicurati che sia un array
+        if (!Array.isArray(size)) {
+          size = [size];
+        }
+        // Se gli elementi dell'array sono ancora stringhe JSON, parsali
+        size = size.map(item => {
+          if (typeof item === 'string' && (item.startsWith('[') || item.startsWith('"'))) {
+            try {
+              return JSON.parse(item);
+            } catch (e) {
+              return item;
+            }
+          }
+          return item;
+        });
+        // Appiattisci l'array nel caso ci siano array nested
+        size = size.flat();
+      } catch (e) {
+        // Se il parsing fallisce, usa la stringa come un singolo valore
+        size = [size];
       }
     }
 
@@ -121,6 +182,12 @@ export async function updateProduct(request, response, next) {
       updateProduct.imageUrl = [...existingImages, ...newImageUrls];
     }
 
+    // Log per debug
+    console.log("Dati da aggiornare:", {
+      color: updateProduct.color,
+      size: updateProduct.size
+    });
+
     const modifyProduct = await Product.findByIdAndUpdate(
       productId,
       { $set: updateProduct },
@@ -133,6 +200,7 @@ export async function updateProduct(request, response, next) {
 
     response.status(200).json(modifyProduct);
   } catch (error) {
+    console.error("Errore nell'aggiornamento del prodotto:", error);
     response.status(500).json({ error: error.message });
   }
 }

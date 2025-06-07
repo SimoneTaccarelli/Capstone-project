@@ -73,6 +73,8 @@ export const ProductProvider = ({ children }) => {
     fetchGraphics();
   }, []);
 
+  console.log("ProductContext", paginationProduct);
+
   return (
     <ProductContext.Provider value={{ 
       paginationProduct, 

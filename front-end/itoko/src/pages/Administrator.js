@@ -5,15 +5,22 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useProducts } from '../context/ProductContext';
 import { API_URL } from '../config/config';
-import ModifyProduct from '../modal/ModifyProduct'; // Importa il modale per modificare i prodotti
+import ModifyGraphic from '../modal/ModifyGraphic'; // Importa il modale per modificare la grafica
 import '../styles/Administrator.css'; // Importa il file CSS per lo stile della pagina
+import ModifyHoodie from '../modal/ModifyHoodie';
+import ModifyTshirt from '../modal/ModifyTshirt'; // Importa il modale per modificare la maglietta
+
 
 const Administrator = () => {
   const { currentUser } = useAuth(); // Recupera l'utente corrente
-  const { paginationGraphic, fetchGraphics, fetchProducts, paginationProduct } = useProducts(); // Importa le grafiche e i prodotti dal contesto
+  const { paginationGraphic, fetchProducts } = useProducts(); // Sostituito fetchGraphics con fetchProducts
   const [selectedGraphic, setSelectedGraphic] = useState(null); // Stato per la grafica selezionata
-  const [selectedProduct, setSelectedProduct] = useState(null); // Stato per il prodotto selezionato
-  const [showModifyProductModal, setShowModifyProductModal] = useState(false); // Stato per il modale
+  const [showModifyGraphicModal, setShowModifyGraphicModal] = useState(false); // Stato per il modale
+
+  const [selectedTshirt, setSelectedTshirt] = useState(null); // Stato per la maglietta selezionata
+  const [showModifyTshirtModal, setShowModifyTshirtModal] = useState(false); // Stato per il modale della maglietta
+  const [selectedHoodie, setSelectedHoodie] = useState(null); // Stato per la felpa con cappuccio selezionata
+  const [showModifyHoodieModal, setShowModifyHoodieModal] = useState(false); // Stato per il modale della felpa con cappuccio
 
   const handleDeleteGraphic = async (graphicId) => {
     try {
@@ -31,35 +38,55 @@ const Administrator = () => {
       });
       console.log(`Grafica con ID ${graphicId} eliminata`);
 
-      // Aggiorna i dati delle grafiche
-      fetchGraphics(paginationGraphic.currentPage, paginationGraphic.graphicsPerPage);
+      // Aggiorna i dati dei prodotti
+      fetchProducts(paginationGraphic.currentPage, paginationGraphic.graphicsPerPage); // Sostituito fetchGraphics con fetchProducts
     } catch (error) {
       console.error('Errore durante la cancellazione della grafica:', error);
     }
   };
 
-  const handleModifyProduct = (graphic) => {
-    setSelectedGraphic(graphic); // Passa solo la grafica
-    setShowModifyProductModal(true);
+  const handleModifyGraphic = (graphic) => {
+    setSelectedGraphic(graphic); // Passa la grafica selezionata
+    setShowModifyGraphicModal(true); // Mostra il modale
   };
 
-  const handleCloseModifyProductModal = () => {
-    setSelectedProduct(null);
-    setShowModifyProductModal(false);
-    fetchProducts(); // Aggiorna la lista dei prodotti dopo la modifica
+  const handleCloseModifyGraphicModal = () => {
+    setSelectedGraphic(null); // Resetta la grafica selezionata
+    setShowModifyGraphicModal(false); // Chiudi il modale
+    fetchProducts(paginationGraphic.currentPage, paginationGraphic.graphicsPerPage); // Sostituito fetchGraphics con fetchProducts
+  };
+
+  const handleModifyTshirt = (graphicName) => {
+    setSelectedTshirt(graphicName); // Passa il nome della grafica per la maglietta
+    setShowModifyTshirtModal(true); // Mostra il modale per la maglietta
+  };
+
+  const handleCloseModifyTshirtModal = () => {
+    setSelectedTshirt(null); // Resetta la maglietta selezionata
+    setShowModifyTshirtModal(false); // Chiudi il modale per la maglietta
+  };
+
+  const handleModifyHoodie = (graphicName) => {
+    setSelectedHoodie(graphicName); // Passa il nome della grafica per la felpa con cappuccio
+    setShowModifyHoodieModal(true); // Mostra il modale per la felpa con cappuccio
+  };
+
+  const handleCloseModifyHoodieModal = () => {
+    setSelectedHoodie(null); // Resetta la felpa con cappuccio selezionata
+    setShowModifyHoodieModal(false); // Chiudi il modale per la felpa con cappuccio
   };
 
   return (
     <>
       <div className="container mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2>Gestione Grafiche e Prodotti</h2>
+          <h2>Gestione Grafiche</h2>
           <div>
-            <Link to="/Creategraphic" className="btn btn-secondary me-2">
+            <Link to="/Creategraphic" className="btn btn-secondary btn-sm me-2">
               <i className="bi bi-plus-circle me-2"></i> Nuova Grafica
             </Link>
-            <Link to="/Createproduct" className="btn btn-primary">
-              <i className="bi bi-plus-circle me-2"></i> Nuovo Prodotto
+            <Link to="/Createproduct" className="btn btn-primary btn-sm">
+              <i className="bi bi-plus-circle me-2"></i> Crea Prodotto
             </Link>
           </div>
         </div>
@@ -87,12 +114,20 @@ const Administrator = () => {
                   <td>{graphic.name}</td>
                   <td>{graphic.tags.join(', ')}</td>
                   <td>
-                    <Button variant="danger" onClick={() => handleDeleteGraphic(graphic._id)} className="me-2">
-                      Cancella
-                    </Button>
-                    <Button variant="warning" onClick={() => handleModifyProduct(graphic)}>
-                      Modifica
-                    </Button>
+                    <div className="d-flex flex-column">
+                      <Button variant="danger" onClick={() => handleDeleteGraphic(graphic._id)} className="mb-2 btn-sm">
+                        Cancella
+                      </Button>
+                      <Button variant="warning" onClick={() => handleModifyGraphic(graphic)} className="mb-2 btn-sm">
+                        Modifica Grafica
+                      </Button>
+                      <Button variant="info" onClick={() => handleModifyTshirt(graphic.name)} className="mb-2 btn-sm">
+                        Modifica T-shirt
+                      </Button>
+                      <Button variant="primary" onClick={() => handleModifyHoodie(graphic.name)} className="btn-sm">
+                        Modifica Hoodie
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -105,13 +140,30 @@ const Administrator = () => {
         </Table>
       </div>
 
-      {/* Modale per modificare il prodotto */}
+      {/* Modale per modificare la grafica */}
       {selectedGraphic && (
-        <ModifyProduct
+        <ModifyGraphic
           graphic={selectedGraphic}
-          type="graphic" // Specifica il tipo di entità
-          show={showModifyProductModal}
-          handleClose={handleCloseModifyProductModal}
+          show={showModifyGraphicModal}
+          handleClose={handleCloseModifyGraphicModal}
+        />
+      )}
+
+      {/* Modale per modificare la T-shirt */}
+      {selectedTshirt && (
+        <ModifyTshirt
+          graphicName={selectedTshirt}
+          show={showModifyTshirtModal}
+          handleClose={handleCloseModifyTshirtModal}
+        />
+      )}
+
+      {/* Modale per modificare la Hoodie */}
+      {selectedHoodie && (
+        <ModifyHoodie
+          graphicName={selectedHoodie}
+          show={showModifyHoodieModal}
+          handleClose={handleCloseModifyHoodieModal}
         />
       )}
     </>

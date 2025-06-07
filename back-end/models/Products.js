@@ -42,5 +42,26 @@ const productSchema = new mongoose.Schema({
   },
 });
 
+// Middleware per deserializzare `color` e `size` se sono stringhe JSON
+productSchema.pre("save", function (next) {
+  if (typeof this.color === "string") {
+    try {
+      this.color = JSON.parse(this.color);
+    } catch (error) {
+      return next(new Error("Formato non valido per il campo color"));
+    }
+  }
+
+  if (typeof this.size === "string") {
+    try {
+      this.size = JSON.parse(this.size);
+    } catch (error) {
+      return next(new Error("Formato non valido per il campo size"));
+    }
+  }
+
+  next();
+});
+
 const Product = mongoose.model("Product", productSchema);
 export default Product;

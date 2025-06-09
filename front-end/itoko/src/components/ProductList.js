@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Carousel, Badge, Dropdown, Pagination } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Card, Row, Col, Carousel, Badge, Dropdown, Pagination, Button, Spinner } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { useProducts } from '../context/ProductContext';
 import { useCart } from '../context/CartContext';
 
 const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
-  const { products, loading, error, pagination, fetchProducts } = useProducts();
-  // const { addToCart } = useCart();
+  const { paginationProduct, loading, error, fetchProducts } = useProducts();
+  const navigate = useNavigate();
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [categories, setCategories] = useState([]);
 
   // Estrai categorie uniche dai prodotti
   useEffect(() => {
-    if (products && products.length > 0) {
-      const uniqueCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
+    if (paginationProduct.products && paginationProduct.products.length > 0) {
+      const uniqueCategories = [...new Set(paginationProduct.products.map(p => p.category).filter(Boolean))];
       setCategories(uniqueCategories);
     }
-  }, [products]);
+  }, [paginationProduct]);
 
   // Filtra i prodotti in base alla ricerca e alla categoria
   useEffect(() => {
-    if (products) {
-      let filtered = [...products];
+    if (paginationProduct.products) {
+      let filtered = [...paginationProduct.products];
 
       // Filtra per ricerca
       if (searchQuery) {
@@ -47,15 +47,30 @@ const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
 
       setFilteredProducts(filtered);
     }
-  }, [products, searchQuery, selectedCategory, maxProducts]);
+  }, [paginationProduct, searchQuery, selectedCategory, maxProducts]);
 
-  if (loading) return <div className="text-center my-4"><div className="spinner-border"></div></div>;
+  const handleProductClick = (productId) => {
+    navigate(`/product/${productId}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" role="status" variant="primary">
+          <span className="visually-hidden">Caricamento...</span>
+        </Spinner>
+        <p className="mt-3">Caricamento prodotti...</p>
+      </div>
+    );
+  }
+  
   if (error) return <div className="alert alert-danger my-4">{error}</div>;
-  if (!products || products.length === 0) return <div className="alert alert-info my-4">Nessun prodotto disponibile.</div>;
+  if (!paginationProduct.products || paginationProduct.products.length === 0) 
+    return <div className="alert alert-info my-4">Nessun prodotto disponibile.</div>;
 
   return (
     <div>
-      {/* Visualizza il dropdown solo se non c'è una ricerca attiva */}
+      {/* Filtro per categoria */}
       {!searchQuery && (
         <div className="d-flex justify-content-end mb-4">
           <Dropdown>
@@ -89,92 +104,144 @@ const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
         {/* Visualizzazione prodotti */}
         {filteredProducts.length > 0 ? (
           <div>  
-            <Row>
-              {filteredProducts.map((product) => (
-                <Col key={product._id} xs={12} sm={6} md={4} lg={3} className="mb-4">
+            <Row xs={1} md={2} lg={3} className="g-4">
+              {filteredProducts.map((product) => {
+                // Determina quali immagini mostrare (grafiche invece di prodotti)
+                const graphicImages = product.graphic && product.graphic.imageUrl 
+                  ? product.graphic.imageUrl 
+                  : [];
+                
+                return (
+                <Col key={product._id}>
                   <Card className="h-100 product-card shadow-sm">
-                    <Card.Header className="p-0 border-0">
-                      <Carousel interval={null} indicators={false}>
-                        {product.imageUrl && product.imageUrl.length > 0 ? (
-                          product.imageUrl.map((imgUrl, index) => (
-                            <Carousel.Item key={index}>
-                              <img
-                                className="d-block w-100"
-                                src={imgUrl}
-                                alt={`${product.name} - immagine ${index + 1}`}
-                                style={{ 
-                                  height: "180px", 
-                                  objectFit: "cover"
-                                }}
-                              />
-                            </Carousel.Item>
-                          ))
-                        ) : (
-                          <Carousel.Item>
-                            <div 
-                              className="d-flex justify-content-center align-items-center bg-light w-100"
-                              style={{ height: "180px" }}
-                            >
-                              <i className="bi bi-image text-muted" style={{ fontSize: "2rem" }}></i>
-                            </div>
+                    {/* Carosello delle GRAFICHE */}
+                    <Carousel interval={null} className="product-carousel">
+                      {graphicImages.length > 0 ? (
+                        graphicImages.map((img, idx) => (
+                          <Carousel.Item key={idx}>
+                            <img
+                              className="d-block w-100"
+                              src={img}
+                              alt={`Grafica ${idx + 1}`}
+                              style={{
+                                height: '250px',
+                                objectFit: 'contain',  // 'contain' per mostrare l'intera grafica
+                                cursor: 'pointer',
+                                backgroundColor: '#f8f9fa' // sfondo chiaro per grafiche con sfondo trasparente
+                              }}
+                              onClick={() => handleProductClick(product._id)}
+                            />
                           </Carousel.Item>
-                        )}
-                      </Carousel>
-                    </Card.Header>
+                        ))
+                      ) : (
+                        <Carousel.Item>
+                          <div 
+                            style={{
+                              height: '250px',
+                              background: '#f8f9fa',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <span className="text-muted">Nessuna grafica</span>
+                          </div>
+                        </Carousel.Item>
+                      )}
+                    </Carousel>
                     
+                    {/* Corpo della card con informazioni sul PRODOTTO */}
                     <Card.Body>
-                      <Card.Title className="text-truncate">{product.name}</Card.Title>
+                      <Card.Title className="d-flex justify-content-between align-items-start">
+                        <div>{product.name || (product.graphic && product.graphic.name)}</div>
+                        <Badge bg="primary">{product.type}</Badge>
+                      </Card.Title>
+                      <Card.Subtitle className="mb-2 text-muted">
+                        {product.category}
+                      </Card.Subtitle>
+                      <Card.Text className="product-description">
+                        {product.description && product.description.length > 100
+                          ? `${product.description.substring(0, 100)}...`
+                          : product.description}
+                      </Card.Text>
                       
-                      {product.category && (
-                        <Badge bg="secondary" className="mb-2">{product.category}</Badge>
+                      {/* Colori disponibili */}
+                      {product.color && product.color.length > 0 && (
+                        <div className="mb-2">
+                          <small className="text-muted">Colori: </small>
+                          <div className="d-flex flex-wrap gap-1">
+                            {product.color.map((color, idx) => (
+                              <Badge 
+                                key={idx} 
+                                bg="light" 
+                                text="dark" 
+                                className="border"
+                              >
+                                {color}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
                       )}
                       
-                      <Card.Text className="small text-truncate">{product.description}</Card.Text>
-                      <Card.Text className="fw-bold text-primary">€{product.price?.toFixed(2) || '0.00'}</Card.Text>
-                    </Card.Body>
-                    
-                    <Card.Footer className="bg-white border-top-0">
-                      <div className="d-grid gap-2">
-                        <Link 
-                          to={`/details/${product._id}`} 
-                          className="btn btn-sm btn-outline-secondary"
+                      {/* Taglie disponibili */}
+                      {product.size && product.size.length > 0 && (
+                        <div className="mb-2">
+                          <small className="text-muted">Taglie: </small>
+                          <div className="d-flex flex-wrap gap-1">
+                            {product.size.map((size, idx) => (
+                              <Badge 
+                                key={idx} 
+                                bg="light" 
+                                text="dark" 
+                                className="border"
+                              >
+                                {size}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="d-flex justify-content-between align-items-center mt-3">
+                        <div className="fs-5 fw-bold">€{product.price}</div>
+                        <Button 
+                          variant="outline-primary" 
+                          size="sm"
+                          onClick={() => handleProductClick(product._id)}
                         >
-                          <i className="bi bi-eye me-1"></i> Visualizza
-                        </Link>
-                        {/* <button 
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => addToCart(product)}
-                        >
-                          <i className="bi bi-cart-plus me-1"></i> Aggiungi al carrello
-                        </button> */}
+                          Visualizza
+                        </Button>
                       </div>
-                    </Card.Footer>
+                    </Card.Body>
                   </Card>
                 </Col>
-              ))}
+              )})}
             </Row>
 
             {/* Paginazione */}
-            <Pagination className="justify-content-center mt-4">
-              <Pagination.Prev
-                onClick={() => fetchProducts(pagination.pagination.currentPage - 1)}
-                disabled={pagination.pagination.currentPage === 1}
-              />
-              {[...Array(pagination.pagination.totalPages)].map((_, index) => (
-                <Pagination.Item
-                  key={index}
-                  active={index + 1 === pagination.currentPage}
-                  onClick={() => fetchProducts(index + 1)}
-                >
-                  {index + 1} 
-                </Pagination.Item>
-              ))}
-              
-              <Pagination.Next
-                onClick={() => fetchProducts(pagination.pagination.currentPage + 1)}
-                disabled={pagination.pagination.currentPage === pagination.pagination.totalPages}
-              />  
-            </Pagination>
+            {paginationProduct.pagination && (
+              <Pagination className="justify-content-center mt-4">
+                <Pagination.Prev
+                  onClick={() => fetchProducts(paginationProduct.pagination.currentPage - 1)}
+                  disabled={paginationProduct.pagination.currentPage === 1}
+                />
+                {[...Array(paginationProduct.pagination.totalPages)].map((_, index) => (
+                  <Pagination.Item
+                    key={index}
+                    active={index + 1 === paginationProduct.pagination.currentPage}
+                    onClick={() => fetchProducts(index + 1)}
+                  >
+                    {index + 1} 
+                  </Pagination.Item>
+                ))}
+                
+                <Pagination.Next
+                  onClick={() => fetchProducts(paginationProduct.pagination.currentPage + 1)}
+                  disabled={paginationProduct.pagination.currentPage === paginationProduct.pagination.totalPages}
+                />  
+              </Pagination>
+            )}
           </div>
         ) : (
           <div className="text-center py-5">

@@ -44,29 +44,57 @@ export async function modifyGraphic(request, response) {
     try {
         const { graphicId } = request.params;
         const { name, tags } = request.body;
-
-        const imageUrls = request.files ? request.files.map(file => file.path) : [];
-
-        const updateData = {
-            name,
-            tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-            imageUrl: imageUrls,
-        };
-
+        
+        // 1. Recupera la grafica attuale per avere i dati esistenti
+        const existingGraphic = await Graphic.findById(graphicId);
+        if (!existingGraphic) {
+            return response.status(404).json({ error: 'Graphic not found' });
+        }
+        
+        // 2. Prepara i dati da aggiornare
+        const updateData = {};
+        
+        // Aggiorna solo i campi forniti nella richiesta
+        if (name !== undefined) {
+            updateData.name = name;
+        }
+        
+        // Gestisci i tag solo se forniti
+        if (tags !== undefined) {
+            // Processo i tag in modo sicuro
+            if (typeof tags === 'string') {
+                updateData.tags = tags.split(',').map(tag => tag.trim());
+            } else if (Array.isArray(tags)) {
+                updateData.tags = tags;
+            }
+        }
+        
+        // 3. Gestisci le immagini SOLO se sono state caricate nuove immagini
+        if (request.files && request.files.length > 0) {
+            const newImageUrls = request.files.map(file => file.path);
+            
+            // Opzione 1: Sostituisci tutte le immagini
+            updateData.imageUrl = newImageUrls;
+            
+            // Opzione 2: Aggiungi le nuove immagini alle esistenti
+            // updateData.imageUrl = [...existingGraphic.imageUrl, ...newImageUrls];
+        }
+        
+        // 4. Esegui l'aggiornamento usando $set per modificare solo i campi specificati
         const updatedGraphic = await Graphic.findByIdAndUpdate(
             graphicId,
             { $set: updateData },
             { new: true }
         );
-
-        if (!updatedGraphic) return response.status(404).json({ error: 'Graphic not found' });
-
-        // Aggiorna i prodotti associati alla grafica
-        await Product.updateMany(
-            { graphic: graphicId },
-            { $set: { name: updatedGraphic.name } }
-        );
-
+        
+        // 5. Aggiorna i prodotti associati se necessario
+        if (name !== undefined) {
+            await Product.updateMany(
+                { graphic: graphicId },
+                { $set: { name: updatedGraphic.name } }
+            );
+        }
+        
         response.status(200).json(updatedGraphic);
     } catch (error) {
         console.error('Errore durante la modifica della grafica:', error);
@@ -111,12 +139,12 @@ export const getAllGraphics = async (req, res) => {
             graphicsPerPage: parseInt(limit),
         };
 
-        res.set('X-Pagination-Graphic', JSON.stringify({
+        // SOLUZIONE 2: Tutto nel body - questa è la soluzione più affidabile
+        res.status(200).json({
             graphics: paginatedGraphics,
             pagination: pagination
-        }));
-
-        res.status(200).json(paginatedGraphics);
+        });
+        
     } catch (error) {
         console.error("Errore durante il recupero delle grafiche:", error);
         res.status(500).json({ error: error.message });

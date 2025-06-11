@@ -31,9 +31,22 @@ const CreateProduct = () => {
         const fetchGraphics = async () => {
             try {
                 const response = await axios.get(`${API_URL}/graphics`);
-                setGraphics(response.data);
+                console.log("Risposta API grafiche:", response.data);
+                
+                // Gestisci diversi formati di risposta possibili
+                if (response.data && response.data.graphics) {
+                    // Nuovo formato: { graphics: [...], pagination: {...} }
+                    setGraphics(response.data.graphics);
+                } else if (Array.isArray(response.data)) {
+                    // Vecchio formato: array semplice
+                    setGraphics(response.data);
+                } else {
+                    console.error("Formato risposta grafiche non riconosciuto:", response.data);
+                    setGraphics([]); // Imposta un array vuoto come fallback
+                }
             } catch (err) {
                 console.error("Errore durante il caricamento delle grafiche:", err);
+                setGraphics([]); // Assicura che graphics sia sempre un array
             }
         };
         fetchGraphics();

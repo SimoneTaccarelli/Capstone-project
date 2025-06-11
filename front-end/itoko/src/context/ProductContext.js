@@ -41,6 +41,7 @@ export const ProductProvider = ({ children }) => {
       }
     } catch (error) {
       setError("Errore nel caricamento dei prodotti");
+      console.error("Errore dettagliato prodotti:", error);
     } finally {
       setLoading(false);
     }
@@ -49,20 +50,51 @@ export const ProductProvider = ({ children }) => {
   // Carica tutte le grafiche
   const fetchGraphics = async (page = 1, limit = 8) => {
     setLoading(true);
+    setError(null);
+    
     try {
       const response = await axios.get(`${API_URL}/graphics?page=${page}&limit=${limit}`);
-      const paginationHeader = response.headers['x-pagination-graphic'];
-      if (paginationHeader) {
-        const parsedPagination = JSON.parse(paginationHeader);
+      console.log("Risposta API grafiche:", response.data);
+      
+      // Gestione della nuova struttura di risposta
+      if (response.data && response.data.graphics) {
+        // Formato nuovo: { graphics: [...], pagination: {...} }
+        const { graphics, pagination } = response.data;
+        
         setPaginationGraphic({
-          ...parsedPagination,
-          graphics: parsedPagination.graphics, // Salva le grafiche direttamente dalla paginazione
+          currentPage: pagination.currentPage,
+          totalPages: pagination.totalPages,
+          totalGraphics: pagination.totalGraphics,
+          graphicsPerPage: pagination.graphicsPerPage,
+          graphics: graphics
         });
+      } else if (response.data && Array.isArray(response.data)) {
+        // Per retrocompatibilità, nel caso in cui la risposta fosse ancora un array
+        console.warn("Formato risposta API deprecato - array semplice");
+        setPaginationGraphic(prev => ({
+          ...prev,
+          currentPage: page,
+          graphics: response.data
+        }));
       } else {
-        setError("Errore nella gestione della paginazione delle grafiche");
+        // Fallback se la struttura è diversa
+        setError("Formato risposta grafiche non riconosciuto");
+        console.error("Formato risposta non riconosciuto:", response.data);
       }
     } catch (error) {
       setError("Errore nel caricamento delle grafiche");
+      console.error("Errore dettagliato grafiche:", error);
+      
+      if (error.response) {
+        console.error("Status:", error.response.status);
+        console.error("Dati:", error.response.data);
+      }
+      
+      // Imposta un array vuoto come fallback
+      setPaginationGraphic(prev => ({
+        ...prev,
+        graphics: []
+      }));
     } finally {
       setLoading(false);
     }
@@ -73,15 +105,14 @@ export const ProductProvider = ({ children }) => {
     fetchGraphics();
   }, []);
 
-  console.log("ProductContext", paginationProduct);
-
   return (
     <ProductContext.Provider value={{ 
       paginationProduct, 
       paginationGraphic,
       loading, 
       error, 
-      fetchProducts 
+      fetchProducts,
+      fetchGraphics  // Esporta anche fetchGraphics!
     }}>
       {children}
     </ProductContext.Provider>

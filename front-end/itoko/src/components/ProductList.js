@@ -68,10 +68,10 @@ const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
     
     if (relatedProducts.length > 0) {
       // Se ci sono prodotti correlati, vai al dettaglio del primo prodotto
-      navigate(`/product/${relatedProducts[0]._id}`);
+      navigate(`/details/${relatedProducts[0]._id}`);
     } else {
       // Altrimenti vai direttamente alla pagina della grafica
-      navigate(`/graphic/${graphicId}`);
+      navigate(`/details/${graphicId}`);
     }
   };
 

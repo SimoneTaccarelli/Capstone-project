@@ -10,7 +10,7 @@ router.get('/graphic/:graphicId/products', graphicController.getProductsByGraphi
 router.get('/graphic/:graphicId', graphicController.getGraphicById);
 router.post('/graphicUpload', authController.isAdminMiddleware, graphicUpload.array('images', 5), graphicController.graphicUpload);
 router.put('/graphic/:graphicId', authController.isAdminMiddleware, graphicUpload.array('images', 5), (req, res, next) => {
-  console.log('Files ricevuti:', req.files);
+  
   next();
 }, graphicController.modifyGraphic);
 router.delete('/graphic/:graphicId', authController.isAdminMiddleware, graphicController.eliminateGraphic);

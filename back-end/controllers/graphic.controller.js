@@ -61,11 +61,34 @@ export async function modifyGraphic(request, response) {
         
         // Gestisci i tag solo se forniti
         if (tags !== undefined) {
-            // Processo i tag in modo sicuro
-            if (typeof tags === 'string') {
-                updateData.tags = tags.split(',').map(tag => tag.trim());
-            } else if (Array.isArray(tags)) {
-                updateData.tags = tags;
+            try {
+                // Caso 1: è una stringa JSON (array serializzato)
+                if (typeof tags === 'string' && (tags.startsWith('[') || tags.startsWith('\"['))) {
+                    const parsedTags = JSON.parse(tags);
+                    updateData.tags = Array.isArray(parsedTags) ? parsedTags : [parsedTags];
+                } 
+                // Caso 2: è un semplice elenco separato da virgole
+                else if (typeof tags === 'string') {
+                    updateData.tags = tags.split(',').map(tag => tag.trim());
+                } 
+                // Caso 3: è già un array
+                else if (Array.isArray(tags)) {
+                    updateData.tags = tags.map(tag => {
+                        // Gestisci il caso in cui un elemento dell'array sia a sua volta una stringa JSON
+                        if (typeof tag === 'string' && tag.startsWith('[')) {
+                            try {
+                                const parsed = JSON.parse(tag);
+                                return parsed;
+                            } catch {
+                                return tag;
+                            }
+                        }
+                        return tag;
+                    }).flat();
+                }
+            } catch (error) {
+                // Fallback: usa i tag come semplice stringa
+                updateData.tags = typeof tags === 'string' ? [tags] : tags;
             }
         }
         
@@ -117,7 +140,7 @@ export async function eliminateGraphic(request, response) {
 
         response.status(200).json({ message: 'Graphic and associated products deleted successfully' });
     } catch (error) {
-        response.status(500).json({ error: error.message });
+        res.status(500).json({ error: error.message });
     }
 }
 

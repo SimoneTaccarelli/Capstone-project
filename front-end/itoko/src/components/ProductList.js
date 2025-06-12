@@ -155,7 +155,8 @@ const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
                           height: '250px',
                           objectFit: 'contain',
                           backgroundColor: '#f8f9fa',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          objectFit: 'cover'
                         }}
                         onClick={() => handleGraphicClick(graphic._id)}
                       />
@@ -179,11 +180,8 @@ const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
               </Carousel>
 
               <Card.Body>
-                <Card.Title className="d-flex justify-content-between align-items-start">
+                <Card.Title className="d-flex justify-content-between align-items-start" >
                   {graphic.name}
-                  {firstProduct && (
-                    <Badge bg="primary" className="ms-2">{firstProduct.type}</Badge>
-                  )}
                 </Card.Title>
                 
                 {graphic.tags && (
@@ -195,7 +193,7 @@ const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
                 <Card.Text className="product-description">
                   {firstProduct && firstProduct.description ? (
                     firstProduct.description.length > 20 
-                      ? `${firstProduct.description.substring(0, 20)}...` 
+                      ? `${firstProduct.description.substring(0, 60)}...` 
                       : firstProduct.description
                   ) : (
                     'Nessuna descrizione disponibile'

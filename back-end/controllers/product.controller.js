@@ -3,7 +3,6 @@ import Product from '../models/Products.js';
 export async function getAllProducts(request, response, next) {
   try {
     const products = await Product.find().populate('graphic', 'name');
-    console.log("Prodotti recuperati dal database:", products); // Log dei prodotti recuperati
 
     if (!products || products.length === 0) {
       return response.status(404).json({ error: 'No products found' });
@@ -16,8 +15,6 @@ export async function getAllProducts(request, response, next) {
     const totalProducts = products.length;
     const totalPages = Math.ceil(totalProducts / limit);
     const paginatedProducts = products.slice(startIndex, endIndex);
-
-    console.log("Prodotti paginati:", paginatedProducts); // Log dei prodotti paginati
 
     const pagination = {
       totalProducts,
@@ -181,12 +178,6 @@ export async function updateProduct(request, response, next) {
       const newImageUrls = request.files.map(file => file.path);
       updateProduct.imageUrl = [...existingImages, ...newImageUrls];
     }
-
-    // Log per debug
-    console.log("Dati da aggiornare:", {
-      color: updateProduct.color,
-      size: updateProduct.size
-    });
 
     const modifyProduct = await Product.findByIdAndUpdate(
       productId,

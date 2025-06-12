@@ -252,7 +252,7 @@ export async function isAdministrator(request, response) {
 
 export async function isAdminMiddleware(request, response, next) {
   const authHeader = request.headers.authorization;
-  console.log('Authorization Header:', authHeader); // Log dell'header Authorization
+  
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     console.log('Authorization header missing or invalid');
@@ -260,11 +260,11 @@ export async function isAdminMiddleware(request, response, next) {
   }
 
   const idToken = authHeader.split('Bearer ')[1];
-  console.log('ID Token:', idToken); // Log del token JWT
+
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
-    console.log('Decoded Token:', decodedToken); // Log del token decodificato
+    
 
     if (decodedToken.admin === true) {
       request.user = decodedToken; // Aggiungi i dati utente alla richiesta

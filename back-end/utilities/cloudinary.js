@@ -26,7 +26,7 @@ const graphicStorage = new CloudinaryStorage({
   params: {
     folder: 'itoko/graphic',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
-    transformation: [{ width: 500, height: 500, crop: 'limit' }]
+    
   }
 });
 
@@ -36,7 +36,7 @@ const productStorage = new CloudinaryStorage({
   params: {
     folder: 'itoko/product',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
-    transformation: [{ width: 500, height: 500, crop: 'limit' }]
+   
   }
 });
 

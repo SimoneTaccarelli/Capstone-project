@@ -9,6 +9,7 @@ import productRouter from './routes/product.js';
 import stripeRouter from './routes/stripe.js';
 import orderRouter from './routes/order.js';
 import graphicRouter from './routes/graphic.js';
+import cartRouter from './routes/cart.js';
 
 
 
@@ -32,6 +33,7 @@ server.use('/api/v1' , productRouter)
 server.use('/api/v1/stripe' , stripeRouter)
 server.use('/api/v1/order' , orderRouter)
 server.use('/api/v1' , graphicRouter)
+server.use('/api/v1/cart' , cartRouter)
 
 
 

@@ -1,5 +1,5 @@
 import cart from '../models/Cart.js';
-import product from '../models/Product.js';
+import product from '../models/Products.js';
 
 // Aggiungi un prodotto al carrello
 export async function addToCart(request, resposnse) {

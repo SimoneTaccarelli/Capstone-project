@@ -3,7 +3,7 @@ import { Button, Container, Nav, Navbar, Form, InputGroup, Dropdown } from 'reac
 import { Link, useNavigate } from 'react-router-dom';
 // import Login from '../modal/Login.js';
 import { useAuth } from '../context/AuthContext';
-import Cart from '../modal/Cart.js';
+import CartTwo from '../modal/CartTwo.js';
 import { useDesign } from '../context/DesignContext';
 import useAdminCheck from "../hooks/useAdminCheck";
 // import { useOrder } from '../context/OrderContext.js';
@@ -99,7 +99,7 @@ function MyNavbar() {
                 </Button>
               </InputGroup>
             </Form>
-            
+            <CartTwo />
             {/* Wrapper per Carrello e Profilo */}
             <div className="d-flex align-items-center gap-2">
               {/* Carrello */}

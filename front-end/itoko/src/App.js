@@ -3,24 +3,26 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import AppRoutes from './routes/AppRoutes';
 import { AuthProvider } from './context/AuthContext';
 import { ProductProvider } from './context/ProductContext';
-// import { CartProvider } from './context/CartContext';
+import { CartProvider } from './context/CartContext';
 import { DesignProvider } from './context/DesignContext';
 // import { OrderProvider } from './context/OrderContext';
+import CartTwo from './modal/CartTwo';
 
 function App() {
   return (
     <>
       <AuthProvider>
         <ProductProvider>
-          {/* <CartProvider> */}
+          <CartProvider>
             <DesignProvider>
               {/* <OrderProvider> */}
               <Router>
+                <CartTwo />
                 <AppRoutes />
               </Router>
               {/* </OrderProvider> */}
             </DesignProvider>
-          {/* </CartProvider> */}
+          </CartProvider>
         </ProductProvider>
       </AuthProvider>
     </>

@@ -1,9 +1,12 @@
 import { useParams } from "react-router-dom";
 import { useProducts } from "../context/ProductContext";
 import { useState, useEffect } from 'react';
-import { Row, Col, Button, Form, Badge, ButtonGroup } from 'react-bootstrap';
+import axios from 'axios';
+import { API_URL } from '../config/config.js';
+import { Row, Col, Button, Form, Badge, ButtonGroup, Toast, ToastContainer } from 'react-bootstrap';
 import InnerImageZoom from 'react-inner-image-zoom';
 import '../styles/imageZoom.css';
+import { useCart } from '../context/CartContext';
 
 const Details = () => {
   const { paginationProduct, loading, error } = useProducts();
@@ -12,6 +15,11 @@ const Details = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [selectedVariant, setSelectedVariant] = useState('T-shirt');
+  const [quantity, setQuantity] = useState(1);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastVariant, setToastVariant] = useState('success');
   
   // Recupera il prodotto corrente e quelli correlati
   useEffect(() => {
@@ -68,6 +76,49 @@ const Details = () => {
       setRelatedProducts(newRelatedProducts);
       setActiveIndex(0); // Reset dell'immagine selezionata
     } 
+  };
+
+  // Funzione per generare o recuperare sessionId
+  function getSessionId() {
+    let sessionId = localStorage.getItem("sessionId");
+    if (!sessionId) {
+      sessionId = crypto?.randomUUID?.() || 
+        'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0;
+          const v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      localStorage.setItem("sessionId", sessionId);
+    }
+    return sessionId;
+  }
+
+  // Usa le funzioni del carrello direttamente dal provider
+  const { addProductToCart } = useCart();
+
+  // Funzione per aggiungere al carrello
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    
+    try {
+      // Usa la funzione condivisa dal CartTwo
+      await addProductToCart(currentProduct, quantity);
+      
+      // Feedback positivo
+      setToastVariant('success');
+      setToastMessage(`${currentProduct.name} (${currentProduct.type}) aggiunto al carrello!`);
+      setShowToast(true);
+      
+    } catch (error) {
+      console.error("Errore nell'aggiunta al carrello:", error);
+      
+      // Feedback negativo
+      setToastVariant('danger');
+      setToastMessage("Impossibile aggiungere il prodotto al carrello");
+      setShowToast(true);
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   if (loading) return <div className="spinner"></div>;
@@ -272,8 +323,74 @@ const Details = () => {
             <p className="mb-0 small">Tipo: {currentProduct.type || 'Non specificato'}</p>
             <p className="mb-0 small">ID prodotto: {currentProduct._id}</p>
           </div>
+          
+          {/* Interfaccia per quantità e pulsante aggiungi al carrello */}
+          <div className="d-flex align-items-center mb-4">
+            <div className="input-group me-3" style={{ width: '150px' }}>
+              <Button 
+                variant="outline-secondary"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                disabled={addingToCart}
+              >
+                -
+              </Button>
+              <input
+                type="number"
+                className="form-control text-center"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                readOnly={addingToCart}
+              />
+              <Button
+                variant="outline-secondary"
+                onClick={() => setQuantity(quantity + 1)}
+                disabled={addingToCart}
+              >
+                +
+              </Button>
+            </div>
+            
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleAddToCart}
+              disabled={addingToCart}
+              className="d-flex align-items-center"
+            >
+              {addingToCart ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Aggiunta...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-cart-plus me-2"></i>
+                  Aggiungi al carrello
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
+      
+      {/* Toast di notifica */}
+      <ToastContainer position="bottom-end" className="p-3">
+        <Toast 
+          show={showToast} 
+          onClose={() => setShowToast(false)} 
+          delay={3000} 
+          autohide
+          bg={toastVariant}
+        >
+          <Toast.Header closeButton={true}>
+            <strong className="me-auto">Carrello</strong>
+          </Toast.Header>
+          <Toast.Body className={toastVariant === 'success' ? 'text-white' : ''}>
+            {toastMessage}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   );
 };

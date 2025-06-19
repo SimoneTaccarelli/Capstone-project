@@ -17,7 +17,6 @@ function App() {
             <DesignProvider>
               {/* <OrderProvider> */}
               <Router>
-                <CartTwo />
                 <AppRoutes />
               </Router>
               {/* </OrderProvider> */}

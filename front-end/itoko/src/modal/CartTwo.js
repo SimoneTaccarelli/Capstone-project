@@ -1,23 +1,26 @@
-import { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import { useState } from 'react';
 import { Button, Modal, Badge } from 'react-bootstrap';
+import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../config/config.js';
-import { useAuth } from '../context/AuthContext';
-
-// Esporta il contesto direttamente
-export const CartContext = createContext();
-
-// Esporta l'hook separatamente
-export const useCart = () => useContext(CartContext);
 
 function CartTwo() {
-    // Stati
+    // Stato locale solo per il modale
     const [show, setShow] = useState(false);
-    const [cartItems, setCartItems] = useState([]);
-    const [itemCount, setItemCount] = useState(0);
-    const [cartTotal, setCartTotal] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [processingOrder, setProcessingOrder] = useState(false);
+    
+    // Usa il context del carrello per dati e funzionalità
+    const { 
+        cartItems, 
+        itemCount, 
+        cartTotal, 
+        loading,
+        removeProductFromCart, 
+        updateProductInCart,
+        clearCart,
+        getSessionId
+    } = useCart();
     
     const { currentUser } = useAuth();
 
@@ -25,189 +28,36 @@ function CartTwo() {
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
 
-    // Funzione per generare o recuperare sessionId
-    const getSessionId = useCallback(() => {
-        let sessionId = localStorage.getItem("sessionId");
-        if (!sessionId) {
-            sessionId = crypto?.randomUUID?.() || 
-                'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                    const r = Math.random() * 16 | 0;
-                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-                    return v.toString(16);
-                });
-            localStorage.setItem("sessionId", sessionId);
-        }
-        return sessionId;
-    }, []);
-
-    // Funzione per recuperare il carrello
-    const fetchCart = useCallback(async () => {
-        const sessionId = getSessionId();
-        setLoading(true);
+    // Gestione checkout con Instagram
+    const handleInstagramCheckout = async () => {
+        if (cartItems.length === 0) return;
+        
+        setProcessingOrder(true);
         try {
-            const response = await axios.get(`${API_URL}/cart/getCart`, {
-                params: { sessionId }
+            // Chiamata al backend per generare il messaggio
+            const response = await axios.post(`${API_URL}/orders/create-instagram-message`, {
+                sessionId: getSessionId(),
+                userData: currentUser ? {
+                    name: currentUser.displayName,
+                    email: currentUser.email,
+                    uid: currentUser.uid
+                } : null
             });
             
-            // Aggiorna i dati del carrello
-            if (response.data && response.data.items) {
-                setCartItems(response.data.items);
-                
-                // Calcola il numero totale di articoli
-                const count = response.data.items.reduce((total, item) => 
-                    total + (item.quantity || 0), 0);
-                setItemCount(count);
-                
-                // Calcola il totale del carrello
-                const total = response.data.items.reduce((sum, item) => 
-                    sum + ((item.product?.price || item.productID?.price || 0) * item.quantity), 0);
-                setCartTotal(total);
-            } else {
-                setCartItems([]);
-                setItemCount(0);
-                setCartTotal(0);
-            }
-            return response.data;
-        } catch (error) {
-            console.error("Errore nel recupero del carrello:", error);
-            setError("Impossibile caricare il carrello");
-            return null;
-        } finally {
-            setLoading(false);
-        }
-    }, [getSessionId]);
-
-    // Recupera il carrello all'avvio
-    useEffect(() => {
-        fetchCart();
-    }, [fetchCart]);
-    
-    // Aggiungi prodotto al carrello - funzione esposta
-    const addProductToCart = useCallback(async (product, quantity = 1) => {
-        const sessionId = getSessionId();
-        setLoading(true);
-        
-        try {
-            const response = await axios.post(`${API_URL}/cart/addToCart`, {
-                sessionId,
-                productID: product._id,
-                quantity
-            });
+            // Utilizza il messaggio generato dal backend
+            const message = response.data.message;
             
-            await fetchCart(); // Ricarica il carrello aggiornato
-            return response.data;
-        } catch (error) {
-            console.error("Errore nell'aggiunta del prodotto al carrello:", error);
-            setError("Impossibile aggiungere il prodotto al carrello");
-            return null;
-        } finally {
-            setLoading(false);
-        }
-    }, [fetchCart, getSessionId]);
-
-    // Rimuovi prodotto dal carrello - funzione esposta
-    const removeProductFromCart = useCallback(async (productID) => {
-        const sessionId = getSessionId();
-        setLoading(true);
-        
-        try {
-            const response = await axios.delete(`${API_URL}/cart/removeFromCart`, {
-                data: { sessionId, productID }
-            });
+            // Apre Instagram con il messaggio
+            const instagramUrl = `https://www.instagram.com/direct/t/itokonolab?text=${message}`;
+            window.open(instagramUrl, '_blank');
             
-            await fetchCart(); // Ricarica il carrello aggiornato
-            return response.data;
+            handleClose();
         } catch (error) {
-            console.error("Errore nella rimozione del prodotto dal carrello:", error);
-            setError("Impossibile rimuovere il prodotto dal carrello");
-            return null;
+            console.error("Errore nella generazione del messaggio:", error);
+            alert("Si è verificato un errore. Riprova più tardi.");
         } finally {
-            setLoading(false);
+            setProcessingOrder(false);
         }
-    }, [fetchCart, getSessionId]);
-
-    // Aggiorna quantità di un prodotto nel carrello - funzione esposta
-    const updateProductInCart = useCallback(async (productID, quantity) => {
-        const sessionId = getSessionId();
-        setLoading(true);
-        
-        try {
-            const response = await axios.put(`${API_URL}/cart/updateCart`, {
-                sessionId,
-                productID,
-                quantity
-            });
-            
-            await fetchCart(); // Ricarica il carrello aggiornato
-            return response.data;
-        } catch (error) {
-            console.error("Errore nell'aggiornamento del prodotto nel carrello:", error);
-            setError("Impossibile aggiornare il prodotto nel carrello");
-            return null;
-        } finally {
-            setLoading(false);
-        }
-    }, [fetchCart, getSessionId]);
-
-    // Svuota il carrello - funzione esposta
-    const clearCart = useCallback(async () => {
-        const sessionId = getSessionId();
-        setLoading(true);
-        
-        try {
-            const response = await axios.delete(`${API_URL}/cart/clearCart`, {
-                data: { sessionId }
-            });
-            
-            setCartItems([]);
-            setItemCount(0);
-            setCartTotal(0);
-            return response.data;
-        } catch (error) {
-            console.error("Errore nello svuotamento del carrello:", error);
-            setError("Impossibile svuotare il carrello");
-            return null;
-        } finally {
-            setLoading(false);
-        }
-    }, [getSessionId]);
-
-    // Funzione per generare il messaggio Instagram
-    const createInstagramMessage = () => {
-        // Intestazione del messaggio
-        let message = "Ciao! Vorrei ordinare questi prodotti:\n\n";
-        
-        // Aggiungi ogni prodotto al messaggio
-        cartItems.forEach((item, index) => {
-            const product = item.product || item.productID || {};
-            message += `${index + 1}. ${product.name} - ${product.type || ''}\n`;
-            message += `   Quantità: ${item.quantity}\n`;
-            message += `   Prezzo: €${(product.price * item.quantity).toFixed(2)}\n\n`;
-        });
-        
-        // Aggiungi il totale
-        message += `Totale ordine: €${cartTotal.toFixed(2)}\n\n`;
-        
-        // Aggiungi info utente se disponibili
-        if (currentUser) {
-            message += `Nome: ${currentUser.displayName || ''}\n`;
-            message += `Email: ${currentUser.email || ''}\n\n`;
-        }
-        
-        message += "Vorrei completare l'ordine. Grazie!";
-        
-        return encodeURIComponent(message);
-    };
-
-    // Reindirizza alla chat Instagram con messaggio precompilato
-    const handleInstagramCheckout = () => {
-        const message = createInstagramMessage();
-        // Sostituisci 'itokonolab' con il tuo handle Instagram
-        const instagramUrl = `https://www.instagram.com/direct/t/itokonolab?text=${message}`;
-        
-        // Apre in una nuova scheda
-        window.open(instagramUrl, '_blank');
-        handleClose();
     };
 
     // Cambio quantità prodotto
@@ -219,21 +69,8 @@ function CartTwo() {
         }
     };
 
-    // Valore del contesto del carrello
-    const cartContextValue = {
-        addProductToCart,
-        removeProductFromCart,
-        updateProductInCart,
-        clearCart,
-        cartItems,
-        itemCount,
-        cartTotal,
-        loading,
-        showCart: handleShow
-    };
-
     return (
-        <CartContext.Provider value={cartContextValue}>
+        <>
             <Button 
                 variant="outline-primary"
                 className="position-relative ms-2"
@@ -266,8 +103,6 @@ function CartTwo() {
                                 <span className="visually-hidden">Caricamento...</span>
                             </div>
                         </div>
-                    ) : error ? (
-                        <div className="alert alert-danger">{error}</div>
                     ) : cartItems.length === 0 ? (
                         <div className="alert alert-info">Il carrello è vuoto</div>
                     ) : (
@@ -348,14 +183,23 @@ function CartTwo() {
                     <Button 
                         variant="primary" 
                         onClick={handleInstagramCheckout}
-                        disabled={cartItems.length === 0 || loading}
+                        disabled={cartItems.length === 0 || loading || processingOrder}
                     >
-                        <i className="bi bi-instagram me-2"></i>
-                        Ordina su Instagram
+                        {processingOrder ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Elaborazione...
+                            </>
+                        ) : (
+                            <>
+                                <i className="bi bi-instagram me-2"></i>
+                                Ordina su Instagram
+                            </>
+                        )}
                     </Button>
                 </Modal.Footer>
             </Modal>
-        </CartContext.Provider>
+        </>
     );
 }
 

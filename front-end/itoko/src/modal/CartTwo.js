@@ -9,6 +9,8 @@ function CartTwo() {
     // Stato locale solo per il modale
     const [show, setShow] = useState(false);
     const [processingOrder, setProcessingOrder] = useState(false);
+    const [showMessageModal, setShowMessageModal] = useState(false);
+    const [orderMessage, setOrderMessage] = useState("");
     
     // Usa il context del carrello per dati e funzionalità
     const { 
@@ -34,24 +36,15 @@ function CartTwo() {
         
         setProcessingOrder(true);
         try {
-            // Chiamata al backend per generare il messaggio
-            const response = await axios.post(`${API_URL}/orders/create-instagram-message`, {
-                sessionId: getSessionId(),
-                userData: currentUser ? {
-                    name: currentUser.displayName,
-                    email: currentUser.email,
-                    uid: currentUser.uid
-                } : null
+            const response = await axios.post(`${API_URL}/cart/create-instagram-message`, {
+                sessionID: getSessionId()
             });
             
-            // Utilizza il messaggio generato dal backend
-            const message = response.data.message;
+            // Mostra il messaggio in un modale
+            setOrderMessage(decodeURIComponent(response.data.message));
+            handleClose(); // Chiudi il carrello
+            setShowMessageModal(true); // Mostra il nuovo modale
             
-            // Apre Instagram con il messaggio
-            const instagramUrl = `https://www.instagram.com/direct/t/itokonolab?text=${message}`;
-            window.open(instagramUrl, '_blank');
-            
-            handleClose();
         } catch (error) {
             console.error("Errore nella generazione del messaggio:", error);
             alert("Si è verificato un errore. Riprova più tardi.");
@@ -196,6 +189,41 @@ function CartTwo() {
                                 Ordina su Instagram
                             </>
                         )}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Modale per il messaggio d'ordine */}
+            <Modal show={showMessageModal} onHide={() => setShowMessageModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Il tuo ordine</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>Copia questo messaggio e incollalo nella chat Instagram:</p>
+                    <div className="border p-3 bg-light">
+                        <pre style={{whiteSpace: 'pre-wrap'}}>{orderMessage}</pre>
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button 
+                        variant="outline-primary" 
+                        onClick={() => {
+                            navigator.clipboard.writeText(orderMessage);
+                            alert("Messaggio copiato negli appunti!");
+                        }}
+                    >
+                        <i className="bi bi-clipboard me-2"></i>
+                        Copia messaggio
+                    </Button>
+                    <Button 
+                        variant="primary" 
+                        onClick={() => {
+                            window.open("https://www.instagram.com/direct/t/itokonolab", "_blank");
+                            setShowMessageModal(false);
+                        }}
+                    >
+                        <i className="bi bi-instagram me-2"></i>
+                        Apri Instagram
                     </Button>
                 </Modal.Footer>
             </Modal>

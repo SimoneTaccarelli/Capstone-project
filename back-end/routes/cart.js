@@ -8,6 +8,6 @@ router.post('/addToCart',cartController.addToCart);
 router.delete('/removeFromCart', cartController.removeFromCart);
 router.put('/updateCart',cartController.updateCart);
 router.delete('/clearCart', cartController.clearCart);
-router.post('/send-message',)
+router.post('/create-instagram-message', cartController.createInstagramMessage);
 
 export default router;

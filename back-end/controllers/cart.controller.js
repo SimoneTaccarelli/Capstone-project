@@ -134,31 +134,36 @@ export async function updateCart(request, response) {
 
 export async function createInstagramMessage(request, response) {
     try {
-    const { sessionID } = request.body;
+        const { sessionID } = request.body;
 
-    const cart = await cart.findOne({ sessionID: sessionID }).populate('items.productID');
-    if (!cart) {
-        return response.status(404).json({ error: 'Carrello non trovato' });
-    }
+        const userCart = await cart.findOne({ sessionID }).populate('items.productID');
+        if (!userCart) {
+            return response.status(404).json({ error: 'Carrello non trovato' });
+        }
 
-    let message = "Ciao! Ecco i prodotti che ho scelto:\n\n";
-    cart.items.forEach((item, index) => {
-        const product = item.productID;
-        message += `${index + 1}. ${product.name} - ${product.type || ''}\n`;
-        message += `   Quantità: ${item.quantity}\n`;
-        message += `   Prezzo: €${(product.price * item.quantity).toFixed(2)}\n\n`;
-    });
+        let message = "Ciao! Ecco i prodotti che ho scelto:\n\n";
+        userCart.items.forEach((item, index) => {
+            const product = item.productID;
+            message += `${index + 1}. ${product.name} - ${product.type || ''}\n`;
+            message += `   Quantità: ${item.quantity}\n`;
+            message += `   Prezzo: €${(product.price * item.quantity).toFixed(2)}\n\n`;
+        });
 
-    const total = cart.items.reduce((sum, item) => sum + (item.productID.price * item.quantity), 0);
-    message += `Totale: €${total.toFixed(2)}\n\n`;
+        const total = userCart.items.reduce((sum, item) => sum + (item.productID.price * item.quantity), 0);
+        message += `Totale: €${total.toFixed(2)}\n\n`;
 
-    message += "Vorrei completare l'acquisto. Grazie!";
+        message += "Vorrei completare l'acquisto. Grazie!";
 
-    const encodedMessage = encodeURIComponent(message);
+        const encodedMessage = encodeURIComponent(message);
+
+        const instagramUrl = `https://www.instagram.com/direct/t/itokonolab?text=${encodedMessage}`;
    
-    res.status(200).json({message: encodedMessage});
-} catch (error) {
-    console.error('Errore nella creazione del messaggio Instagram:', error);
-    response.status(500).json({ error: 'Errore durante la creazione del messaggio Instagram' });
-  }
+        response.status(200).json({
+            message: encodedMessage,
+            instagramUrl: instagramUrl
+        });
+    } catch (error) {
+        console.error('Errore nella creazione del messaggio Instagram:', error);
+        response.status(500).json({ error: 'Errore durante la creazione del messaggio Instagram' });
+    }
 }

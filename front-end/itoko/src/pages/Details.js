@@ -101,7 +101,13 @@ const Details = () => {
     setAddingToCart(true);
     
     try {
-      // Usa la funzione condivisa dal CartTwo
+      // CORREZIONE: Inserisci un console.log per debug
+      console.log("Tentativo di aggiungere al carrello:", {
+        prodotto: currentProduct,
+        quantità: quantity
+      });
+      
+      // Usa la funzione condivisa dal CartContext
       await addProductToCart(currentProduct, quantity);
       
       // Feedback positivo
@@ -114,7 +120,7 @@ const Details = () => {
       
       // Feedback negativo
       setToastVariant('danger');
-      setToastMessage("Impossibile aggiungere il prodotto al carrello");
+      setToastMessage(`Impossibile aggiungere il prodotto: ${error.message}`);
       setShowToast(true);
     } finally {
       setAddingToCart(false);

@@ -36,7 +36,7 @@ export function CartProvider({ children }) {
         setLoading(true);
         try {
             const response = await axios.get(`${API_URL}/cart/getCart`, {
-                params: { sessionId }
+                params: { sessionID: sessionId } 
             });
             
             if (response.data && response.data.items) {
@@ -68,26 +68,102 @@ export function CartProvider({ children }) {
 
     // Implementazioni di addProductToCart, removeProductFromCart, ecc.
     const addProductToCart = useCallback(async (product, quantity = 1) => {
-        /* Implementazione */
         const sessionId = getSessionId();
         setLoading(true);
         
         try {
+            // CORREZIONE: Assicuriamoci che product._id sia definito
+            if (!product || !product._id) {
+                console.error("Prodotto non valido:", product);
+                throw new Error("ID prodotto mancante");
+            }
+            
+            // CORREZIONE: Verifica che la chiamata API utilizzi la struttura corretta
             const response = await axios.post(`${API_URL}/cart/addToCart`, {
-                sessionId,
+                sessionID: sessionId, // CORREZIONE: Usa sessionID come si aspetta il backend
                 productID: product._id,
                 quantity
             });
             
+            // CORREZIONE: Aggiungi un log per verificare la risposta
+            console.log("Risposta API addToCart:", response.data);
+            
+            // IMPORTANTE: Ricarica il carrello per aggiornare i dati
             await fetchCart();
             return response.data;
         } catch (error) {
-            console.error("Errore nell'aggiunta del prodotto al carrello:", error);
-            return null;
+            console.error("Errore dettagliato:", error.response?.data || error.message);
+            throw error;
         } finally {
             setLoading(false);
         }
     }, [fetchCart, getSessionId]);
+
+    // Funzione per rimuovere un prodotto dal carrello
+    const removeProductFromCart = useCallback(async (productID) => {
+        const sessionId = getSessionId();
+        setLoading(true);
+        
+        try {
+            await axios.delete(`${API_URL}/cart/removeFromCart`, {
+                data: { sessionID: sessionId, productID }
+            });
+            
+            // Ricarica il carrello dopo la rimozione
+            await fetchCart();
+            return true;
+        } catch (error) {
+            console.error("Errore nella rimozione del prodotto dal carrello:", error);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    }, [fetchCart, getSessionId]);
+
+    // Funzione per aggiornare la quantità di un prodotto
+    const updateProductInCart = useCallback(async (productID, quantity) => {
+        const sessionId = getSessionId();
+        setLoading(true);
+        
+        try {
+            await axios.put(`${API_URL}/cart/updateCart`, {
+                sessionID: sessionId,
+                items: [{ productID, quantity }]
+            });
+            
+            // Ricarica il carrello dopo l'aggiornamento
+            await fetchCart();
+            return true;
+        } catch (error) {
+            console.error("Errore nell'aggiornamento del prodotto nel carrello:", error);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    }, [fetchCart, getSessionId]);
+
+    // Funzione per svuotare completamente il carrello
+    const clearCart = useCallback(async () => {
+        const sessionId = getSessionId();
+        setLoading(true);
+        
+        try {
+            await axios.delete(`${API_URL}/cart/clearCart`, {
+                data: { sessionID: sessionId }
+            });
+            
+            // Aggiorna lo stato locale per riflettere il carrello vuoto
+            setCartItems([]);
+            setItemCount(0);
+            setCartTotal(0);
+            return true;
+        } catch (error) {
+            console.error("Errore nello svuotamento del carrello:", error);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    }, [getSessionId]);
 
     // Esponi le funzioni e i valori tramite il Provider
     return (
@@ -97,9 +173,10 @@ export function CartProvider({ children }) {
             cartTotal,
             loading,
             addProductToCart,
-            removeProductFromCart: async () => {}, // implementa le altre funzioni
-            updateProductInCart: async () => {}, // implementa le altre funzioni
-            clearCart: async () => {} // implementa le altre funzioni
+            removeProductFromCart, // Funzione completa
+            updateProductInCart, // Funzione completa
+            clearCart, // Funzione completa
+            getSessionId
         }}>
             {children}
         </CartContext.Provider>

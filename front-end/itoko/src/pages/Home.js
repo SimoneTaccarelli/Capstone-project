@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Container, Toast, ToastContainer } from 'react-bootstrap';
-import { useLocation } from 'react-router-dom';
+
 import { useDesign } from '../context/DesignContext';
 import ProductList from '../components/ProductList';
 // import { useOrder } from '../context/OrderContext';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 
-const Home = () => {
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const searchQuery = searchParams.get('search') || '';
+const Home = ({searchQuery}) => {
+  
   
   // Usa il context per accedere all'immagine frontale
   const { frontImage, loading } = useDesign();
@@ -32,16 +30,16 @@ const Home = () => {
   }, []);
   
   // Toast di benvenuto
-  useEffect(() => {
-    // Verifica se c'è un utente appena loggato
-    if (currentUser && location.state?.fromLogin) {
-      setUserEmail(currentUser.email);
-      setShowWelcomeToast(true);
+  // useEffect(() => {
+  //   // Verifica se c'è un utente appena loggato
+  //   if (currentUser && location.state?.fromLogin) {
+  //     setUserEmail(currentUser.email);
+  //     setShowWelcomeToast(true);
       
-      // Carica ordini dell'utente
-      // getUserOrders();
-    }
-  }, [currentUser, location.state, ]);
+  //     // Carica ordini dell'utente
+  //     // getUserOrders();
+  //   }
+  // }, [currentUser, location.state, ]);
 
   return (
     <>

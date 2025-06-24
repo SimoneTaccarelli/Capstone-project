@@ -8,10 +8,9 @@ import { useDesign } from '../context/DesignContext';
 import useAdminCheck from "../hooks/useAdminCheck";
 // import { useOrder } from '../context/OrderContext.js';
 
-function MyNavbar() {
+function MyNavbar({ searchQuery, setSearchQuery }) {
   const { logout, userData, currentUser, admin } = useAuth();
   const { isAdmin } = useAdminCheck();
-  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const { logo } = useDesign();
   // const { getUserOrders } = useOrder();

@@ -16,11 +16,13 @@ import CreateGraphic from "../pages/CreateGraphic";
 // import OrderUser from "../pages/OrderUser";
 // import Order from "../pages/Order";
 import useAdminCheck from "../hooks/useAdminCheck";
+import { useState } from "react";
 
 const AppRoutes = () => {
     const { userData, loading, admin } = useAuth();
     const { isAdmin, loading: adminLoading } = useAdminCheck();
     const user = userData && userData._id;
+    const [ searchQuery, setSearchQuery ] = useState("");
 
   
 
@@ -37,7 +39,7 @@ const AppRoutes = () => {
 
     return (
         <>
-            <MyNavbar />
+            <MyNavbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
             <Routes >
                 {/* Route pubbliche */}
                 {/* <Route path="/success" element={<SuccessPayment />} /> */}
@@ -47,8 +49,8 @@ const AppRoutes = () => {
                 <Route path="/login-admin" element={<LoginAdmin />} />
                 <Route path="/privacy-and-policy" element={<PrivacyAndPolicy />} />
                 {/* <Route path="/order" element={<Order />} /> */}
-                <Route path="/" element={<Home />} />
-                
+                <Route path="/" element={<Home searchQuery={searchQuery} />} />
+
                 {/* Route che richiedono autenticazione */}
                 {/* <Route path="/ordersUser" element={user ? <OrderUser /> : <Navigate to="/" />} /> */}
                 <Route path="/profile" element={user ? <ProfileUser /> : <Navigate to="/" />} />

@@ -39,12 +39,39 @@ const ProductList = ({ searchQuery = '', maxProducts = 8 }) => {
     
     // Filtra per ricerca
     if (searchQuery) {
-      filtered = filtered.filter(graphic =>
-        graphic.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        graphic.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (graphic.tags && typeof graphic.tags === 'string' && 
-         graphic.tags.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+      filtered = filtered.filter(graphic => {
+        // Filtro sulle proprietà della grafica, inclusa la categoria/tags
+        const matchGraphic =
+          graphic.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          graphic.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (typeof graphic.tags === 'string' &&
+            graphic.tags.toLowerCase().includes(searchQuery.toLowerCase()));
+
+        // Filtro sui prodotti associati a questa grafica
+        const relatedProducts = products.filter(product =>
+          product.graphic && (product.graphic._id === graphic._id || product.graphic === graphic._id)
+        );
+        const matchProduct = relatedProducts.some(product =>
+          product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (product.type && product.type.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (product.tags && typeof product.tags === 'string' &&
+            product.tags.toLowerCase().includes(searchQuery.toLowerCase())) // <-- aggiunto filtro su tags prodotto
+        );
+
+        // Cerca anche nella categoria (tags) della grafica
+        const matchCategory =
+          typeof graphic.tags === 'string'
+            ? graphic.tags.toLowerCase().includes(searchQuery.toLowerCase())
+            : Array.isArray(graphic.tags)
+              ? graphic.tags.some(tag =>
+                  typeof tag === 'string' &&
+                  tag.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+              : false;
+
+        return matchGraphic || matchProduct || matchCategory;
+      });
     }
 
     // Filtra per categoria

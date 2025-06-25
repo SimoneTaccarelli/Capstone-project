@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Container, Nav, Navbar, Form, InputGroup, Dropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 // import Login from '../modal/Login.js';
@@ -6,14 +6,16 @@ import { useAuth } from '../context/AuthContext';
 import CartTwo from '../modal/CartTwo.js';
 import { useDesign } from '../context/DesignContext';
 import useAdminCheck from "../hooks/useAdminCheck";
-// import { useOrder } from '../context/OrderContext.js';
+import { useProducts } from '../context/ProductContext';
 
 function MyNavbar({ searchQuery, setSearchQuery }) {
   const { logout, userData, currentUser, admin } = useAuth();
   const { isAdmin } = useAdminCheck();
   const navigate = useNavigate();
   const { logo } = useDesign();
-  // const { getUserOrders } = useOrder();
+  const { fetchProducts, fetchGraphics, paginationProduct, paginationGraphic, loading, error } = useProducts();
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Recupera gli ordini dell'utente loggato
   // const fetchUserOrders = async () => {
@@ -51,6 +53,11 @@ function MyNavbar({ searchQuery, setSearchQuery }) {
       // Gestione errore silenziosa
     }
   };
+
+  useEffect(() => {
+    fetchProducts({ search: searchQuery, category: selectedCategory, page: currentPage });
+    fetchGraphics({ search: searchQuery, category: selectedCategory, page: currentPage });
+  }, [searchQuery, selectedCategory, currentPage]);
 
   return (
     <Navbar bg="light" expand="lg" sticky="top" className="shadow-sm">

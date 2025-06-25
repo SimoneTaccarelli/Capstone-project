@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Alert } from 'react-bootstrap';
+import { Table, Button, Alert, Pagination } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +16,7 @@ const Administrator = () => {
   const { paginationGraphic, fetchProducts, loading, error } = useProducts(); // Sostituito fetchGraphics con fetchProducts
   const [selectedGraphic, setSelectedGraphic] = useState(null); // Stato per la grafica selezionata
   const [showModifyGraphicModal, setShowModifyGraphicModal] = useState(false); // Stato per il modale
-
+  const [currentPage, setCurrentPage] = useState(1); // Stato per la pagina corrente
   const [selectedTshirt, setSelectedTshirt] = useState(null); // Stato per la maglietta selezionata
   const [showModifyTshirtModal, setShowModifyTshirtModal] = useState(false); // Stato per il modale della maglietta
   const [selectedHoodie, setSelectedHoodie] = useState(null); // Stato per la felpa con cappuccio selezionata
@@ -28,7 +28,7 @@ const Administrator = () => {
   useEffect(() => {
     // Utilizziamo una flag per assicurarci che il caricamento avvenga solo una volta
     let isMounted = true;
-    
+
     const loadGraphics = async () => {
       try {
         setFetchError(null);
@@ -42,7 +42,7 @@ const Administrator = () => {
     };
 
     loadGraphics();
-    
+
     // Cleanup function
     return () => {
       isMounted = false;
@@ -220,7 +220,27 @@ const Administrator = () => {
           />
         )}
       </div>
+      <Pagination className="justify-content-center mt-4">
+        <Pagination.Prev
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(currentPage - 1)}
+        />
+        {[...Array(paginationGraphic.totalPages)].map((_, idx) => (
+          <Pagination.Item
+            key={idx + 1}
+            active={currentPage === idx + 1}
+            onClick={() => setCurrentPage(idx + 1)}
+          >
+            {idx + 1}
+          </Pagination.Item>
+        ))}
+        <Pagination.Next
+          disabled={currentPage === paginationGraphic.totalPages}
+          onClick={() => setCurrentPage(currentPage + 1)}
+        />
+      </Pagination>
     </>
+
   );
 };
 

@@ -25,16 +25,23 @@ export const ProductProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // Carica tutti i prodotti
-  const fetchProducts = async (page = 1, limit = 8) => {
+  const fetchProducts = async ({ search = '', category = '', type = '', page = 1, limit = 8 } = {}) => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/product?page=${page}&limit=${limit}`);
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (category) params.append('category', category);
+      if (type) params.append('type', type);
+      params.append('page', page);
+      params.append('limit', limit);
+
+      const response = await axios.get(`${API_URL}/product?${params.toString()}`);
       const paginationHeader = response.headers['x-pagination'];
       if (paginationHeader) {
         const parsedPagination = JSON.parse(paginationHeader);
         setPaginationProduct({
           ...parsedPagination,
-          products: response.data, // Salva i prodotti direttamente dalla risposta
+          products: response.data,
         });
       } else {
         setError("Errore nella gestione della paginazione");
@@ -48,19 +55,19 @@ export const ProductProvider = ({ children }) => {
   };
 
   // Carica tutte le grafiche
-  const fetchGraphics = async (page = 1, limit = 8) => {
+  const fetchGraphics = async ({ search = '', category = '', page = 1, limit = 8 } = {}) => {
     setLoading(true);
     setError(null);
-    
     try {
-      const response = await axios.get(`${API_URL}/graphics?page=${page}&limit=${limit}`);
-      console.log("Risposta API grafiche:", response.data);
-      
-      // Gestione della nuova struttura di risposta
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (category) params.append('category', category);
+      params.append('page', page);
+      params.append('limit', limit);
+
+      const response = await axios.get(`${API_URL}/graphics?${params.toString()}`);
       if (response.data && response.data.graphics) {
-        // Formato nuovo: { graphics: [...], pagination: {...} }
         const { graphics, pagination } = response.data;
-        
         setPaginationGraphic({
           currentPage: pagination.currentPage,
           totalPages: pagination.totalPages,
@@ -69,28 +76,18 @@ export const ProductProvider = ({ children }) => {
           graphics: graphics
         });
       } else if (response.data && Array.isArray(response.data)) {
-        // Per retrocompatibilità, nel caso in cui la risposta fosse ancora un array
-        console.warn("Formato risposta API deprecato - array semplice");
         setPaginationGraphic(prev => ({
           ...prev,
           currentPage: page,
           graphics: response.data
         }));
       } else {
-        // Fallback se la struttura è diversa
         setError("Formato risposta grafiche non riconosciuto");
         console.error("Formato risposta non riconosciuto:", response.data);
       }
     } catch (error) {
       setError("Errore nel caricamento delle grafiche");
       console.error("Errore dettagliato grafiche:", error);
-      
-      if (error.response) {
-        console.error("Status:", error.response.status);
-        console.error("Dati:", error.response.data);
-      }
-      
-      // Imposta un array vuoto come fallback
       setPaginationGraphic(prev => ({
         ...prev,
         graphics: []

@@ -146,14 +146,29 @@ export async function eliminateGraphic(request, response) {
 
 export const getAllGraphics = async (req, res) => {
     try {
-        const graphics = await Graphic.find();
+        const { search, category, page = 1, limit = 8 } = req.query;
 
-        const { page = 1, limit = 8 } = req.query;
-        const startIndex = (page - 1) * limit;
-        const endIndex = page * limit;
-        const totalGraphics = graphics.length;
+        // Costruisci il filtro
+        const filter = {};
+        if (search) {
+            filter.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { tags: { $regex: search, $options: 'i' } }
+            ];
+        }
+        if (category) {
+            filter.tags = category;
+        }
+
+        // Conta il totale dei risultati filtrati
+        const totalGraphics = await Graphic.countDocuments(filter);
+
+        // Recupera solo le grafiche filtrate e paginate
+        const graphics = await Graphic.find(filter)
+            .skip((page - 1) * limit)
+            .limit(Number(limit));
+
         const totalPages = Math.ceil(totalGraphics / limit);
-        const paginatedGraphics = graphics.slice(startIndex, endIndex);
 
         const pagination = {
             totalGraphics,
@@ -162,12 +177,11 @@ export const getAllGraphics = async (req, res) => {
             graphicsPerPage: parseInt(limit),
         };
 
-        // SOLUZIONE 2: Tutto nel body - questa è la soluzione più affidabile
         res.status(200).json({
-            graphics: paginatedGraphics,
-            pagination: pagination
+            graphics,
+            pagination
         });
-        
+
     } catch (error) {
         console.error("Errore durante il recupero delle grafiche:", error);
         res.status(500).json({ error: error.message });

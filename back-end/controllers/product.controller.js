@@ -2,19 +2,36 @@ import Product from '../models/Products.js';
 
 export async function getAllProducts(request, response, next) {
   try {
-    const products = await Product.find().populate('graphic', 'name');
+    // Estrai parametri di ricerca e paginazione dalla query
+    const { search, category, type, page = 1, limit = 8 } = request.query;
 
-    if (!products || products.length === 0) {
-      return response.status(404).json({ error: 'No products found' });
+    // Costruisci il filtro dinamico
+    const filter = {};
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { type: { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (category) {
+      filter.category = category;
+    }
+    if (type) {
+      filter.type = type;
     }
 
-    // Logica di paginazione
-    const { page = 1, limit = 8 } = request.query;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const totalProducts = products.length;
+    // Conta il totale dei prodotti filtrati
+    const totalProducts = await Product.countDocuments(filter);
+
+    // Recupera solo i prodotti filtrati e paginati
+    const products = await Product.find(filter)
+      .populate('graphic', 'name')
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
     const totalPages = Math.ceil(totalProducts / limit);
-    const paginatedProducts = products.slice(startIndex, endIndex);
 
     const pagination = {
       totalProducts,
@@ -24,7 +41,7 @@ export async function getAllProducts(request, response, next) {
     };
 
     response.set('X-Pagination', JSON.stringify(pagination));
-    response.status(200).json(paginatedProducts);
+    response.status(200).json(products);
   } catch (error) {
     console.error("Errore durante il recupero dei prodotti:", error);
     response.status(500).json({ error: error.message });

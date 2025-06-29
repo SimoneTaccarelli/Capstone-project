@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProducts } from '../context/ProductContext';
 
 const ProductList = ({ maxProducts = 8 }) => {
-  const { paginationProduct, loading, error, fetchProducts, paginationGraphic } = useProducts();
+  const { paginationProduct, loading, error, fetchProducts, paginationGraphic, fetchGraphics } = useProducts();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('');
   const [categories, setCategories] = useState([]);
@@ -26,25 +26,30 @@ const ProductList = ({ maxProducts = 8 }) => {
   // Estrai categorie uniche dalle grafiche
   useEffect(() => {
     if (graphics && graphics.length > 0) {
-      const uniqueCategories = [...new Set(graphics
+      const allTags = graphics
         .map(graphic => graphic.tags)
-        .filter(Boolean))];
+        .filter(Boolean) // Filtra i tag non nulli o undefined
+        .flat(); // Appiattisce l'array se tags è un array di stringhe
+         const uniqueCategories = [...new Set(allTags)].filter(Boolean);
       setCategories(uniqueCategories);
     }
+
+   
   }, [graphics]);
 
   // Filtra solo per categoria selezionata (se vuoi mantenere il filtro locale per categoria)
   const filteredGraphics = useMemo(() => {
     let filtered = [...graphics];
     if (selectedCategory) {
-      filtered = filtered.filter(graphic => graphic.tags === selectedCategory);
-    }
-    // Limita il numero di grafiche visualizzate (opzionale)
-    if (maxProducts > 0 && filtered.length > maxProducts) {
-      filtered = filtered.slice(0, maxProducts);
+      filtered = filtered.filter(graphic => {
+        if (Array.isArray(graphic.tags)) {
+          return graphic.tags.includes(selectedCategory);
+        }
+        return graphic.tags === selectedCategory;
+      });
     }
     return filtered;
-  }, [graphics, selectedCategory, maxProducts]);
+  }, [graphics, selectedCategory]);
 
   const handleGraphicClick = (graphicId) => {
     const relatedProducts = products.filter(product =>
@@ -56,6 +61,11 @@ const ProductList = ({ maxProducts = 8 }) => {
       navigate(`/details/${graphicId}`);
     }
   };
+
+  useEffect(() => {
+    fetchProducts({ category: selectedCategory, page: currentPage });
+    fetchGraphics({ category: selectedCategory, page: currentPage });
+  }, [selectedCategory, currentPage]);
 
   if (loading) {
     return (
@@ -74,6 +84,8 @@ const ProductList = ({ maxProducts = 8 }) => {
   if (!graphics || graphics.length === 0) {
     return <div className="alert alert-info">Nessuna grafica trovata.</div>;
   }
+
+  
 
   return (
     <>

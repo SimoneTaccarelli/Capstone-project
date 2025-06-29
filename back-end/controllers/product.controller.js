@@ -3,7 +3,7 @@ import Product from '../models/Products.js';
 export async function getAllProducts(request, response, next) {
   try {
     // Estrai parametri di ricerca e paginazione dalla query
-    const { search, category, type, page = 1, limit = 8 } = request.query;
+    const { search, category, type, } = request.query;
 
     // Costruisci il filtro dinamico
     const filter = {};
@@ -23,25 +23,12 @@ export async function getAllProducts(request, response, next) {
     }
 
     // Conta il totale dei prodotti filtrati
-    const totalProducts = await Product.countDocuments(filter);
+    const producs = await Product.find(filter)
 
     // Recupera solo i prodotti filtrati e paginati
-    const products = await Product.find(filter)
-      .populate('graphic', 'name')
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+    
 
-    const totalPages = Math.ceil(totalProducts / limit);
-
-    const pagination = {
-      totalProducts,
-      totalPages,
-      currentPage: parseInt(page),
-      productsPerPage: parseInt(limit),
-    };
-
-    response.set('X-Pagination', JSON.stringify(pagination));
-    response.status(200).json(products);
+    response.status(200).json(producs );
   } catch (error) {
     console.error("Errore durante il recupero dei prodotti:", error);
     response.status(500).json({ error: error.message });

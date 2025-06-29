@@ -30,7 +30,7 @@ const CreateProduct = () => {
     useEffect(() => {
         const fetchGraphics = async () => {
             try {
-                const response = await axios.get(`${API_URL}/graphics`);
+                const response = await axios.get(`${API_URL}/graphics?limit=1000`);
                 console.log("Risposta API grafiche:", response.data);
                 
                 // Gestisci diversi formati di risposta possibili

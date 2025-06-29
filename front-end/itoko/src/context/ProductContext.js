@@ -25,27 +25,22 @@ export const ProductProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // Carica tutti i prodotti
-  const fetchProducts = async ({ search = '', category = '', type = '', page = 1, limit = 8 } = {}) => {
+  const fetchProducts = async ({ search = '', category = '', type = ''} = {}) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (category) params.append('category', category);
       if (type) params.append('type', type);
-      params.append('page', page);
-      params.append('limit', limit);
+    
 
       const response = await axios.get(`${API_URL}/product?${params.toString()}`);
-      const paginationHeader = response.headers['x-pagination'];
-      if (paginationHeader) {
-        const parsedPagination = JSON.parse(paginationHeader);
+      
         setPaginationProduct({
-          ...parsedPagination,
           products: response.data,
+        
         });
-      } else {
-        setError("Errore nella gestione della paginazione");
-      }
+        console.log("Prodotti caricati:", response.data);
     } catch (error) {
       setError("Errore nel caricamento dei prodotti");
       console.error("Errore dettagliato prodotti:", error);
@@ -75,6 +70,7 @@ export const ProductProvider = ({ children }) => {
           graphicsPerPage: pagination.graphicsPerPage,
           graphics: graphics
         });
+        
       } else if (response.data && Array.isArray(response.data)) {
         setPaginationGraphic(prev => ({
           ...prev,

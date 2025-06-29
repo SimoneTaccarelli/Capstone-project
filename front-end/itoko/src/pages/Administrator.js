@@ -13,7 +13,7 @@ import ModifyTshirt from '../modal/ModifyTshirt'; // Importa il modale per modif
 
 const Administrator = () => {
   const { currentUser } = useAuth(); // Recupera l'utente corrente
-  const { paginationGraphic, fetchProducts, loading, error } = useProducts(); // Sostituito fetchGraphics con fetchProducts
+  const { paginationGraphic, fetchGraphics, loading, error } = useProducts();
   const [selectedGraphic, setSelectedGraphic] = useState(null); // Stato per la grafica selezionata
   const [showModifyGraphicModal, setShowModifyGraphicModal] = useState(false); // Stato per il modale
   const [currentPage, setCurrentPage] = useState(1); // Stato per la pagina corrente
@@ -32,7 +32,7 @@ const Administrator = () => {
     const loadGraphics = async () => {
       try {
         setFetchError(null);
-        await fetchProducts(1, 8); // Carica la prima pagina di grafiche
+        await fetchGraphics({ page: currentPage, limit: paginationGraphic.graphicsPerPage || 8 });
       } catch (err) {
         console.error("Errore nel caricamento delle grafiche:", err);
         if (isMounted) {
@@ -47,7 +47,7 @@ const Administrator = () => {
     return () => {
       isMounted = false;
     };
-  }, []); // <-- Rimuovi fetchProducts dalle dipendenze
+  }, [currentPage]); // <-- Rimuovi fetchProducts dalle dipendenze
 
   const handleDeleteGraphic = async (graphicId) => {
     try {
@@ -66,7 +66,7 @@ const Administrator = () => {
       console.log(`Grafica con ID ${graphicId} eliminata`);
 
       // Aggiorna i dati dei prodotti
-      fetchProducts(paginationGraphic.currentPage, paginationGraphic.graphicsPerPage); // Sostituito fetchGraphics con fetchProducts
+      fetchGraphics({ page: paginationGraphic.currentPage, limit: paginationGraphic.graphicsPerPage }); // Sostituito fetchGraphics con fetchProducts
     } catch (error) {
       console.error('Errore durante la cancellazione della grafica:', error);
     }
@@ -80,7 +80,7 @@ const Administrator = () => {
   const handleCloseModifyGraphicModal = () => {
     setSelectedGraphic(null); // Resetta la grafica selezionata
     setShowModifyGraphicModal(false); // Chiudi il modale
-    fetchProducts(paginationGraphic.currentPage, paginationGraphic.graphicsPerPage); // Sostituito fetchGraphics con fetchProducts
+    fetchGraphics({ page: paginationGraphic.currentPage, limit: paginationGraphic.graphicsPerPage }); // Sostituito fetchGraphics con fetchProducts
   };
 
   const handleModifyTshirt = (graphicName) => {
@@ -126,7 +126,7 @@ const Administrator = () => {
               <Button
                 variant="outline-danger"
                 size="sm"
-                onClick={() => fetchProducts(1, 8)}
+                onClick={() => fetchGraphics({ page: 1, limit: 8 })}
               >
                 <i className="bi bi-arrow-clockwise me-1"></i> Riprova
               </Button>

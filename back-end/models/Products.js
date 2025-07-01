@@ -40,6 +40,13 @@ const productSchema = new mongoose.Schema({
     ref: "Graphic",
     required: true,
   },
+  discount: {
+    type: Number,
+    default: 0, 
+  },
+  salePrice : {
+    type: Number, 
+  }
 });
 
 // Middleware per deserializzare `color` e `size` se sono stringhe JSON

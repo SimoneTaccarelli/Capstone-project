@@ -60,6 +60,14 @@ export async function createSale(req, res) {
             return res.status(400).json({ error: "Invalid sale price" });
         }
 
+        const types = ['T-shirt', 'Hoodie']
+
+        if (!types.includes(type)) {
+            return res.status(400).json({ error: "Invalid type. Must be 't-shirt' or 'hoodie'" });
+        }
+
+
+
         
         const newSale = new product({
             name,
@@ -92,6 +100,11 @@ export async function updateSale(req, res) {
 
         if (salesPrice && (typeof salesPrice !== 'number' || salesPrice < 0)) {
             return res.status(400).json({ error: "Invalid sale price" });
+        }
+
+        const types = ['T-shirt', 'Hoodie'];
+        if (!types.includes(type)) {
+            return res.status(400).json({ error: "Invalid type. Must be 't-shirt' or 'hoodie'" });
         }
 
         const updatedSale = await product.findByIdAndUpdate(
@@ -130,6 +143,7 @@ export async function deleteSale(req, res) {
         if (!deletedSale) {
             return res.status(404).json({ error: 'Sale not found' });
         }
+        
 
         res.status(200).json({ message: 'Sale deleted successfully' });
     } catch (error) {

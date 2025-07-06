@@ -11,6 +11,7 @@ import ModifyHoodie from '../modal/ModifyHoodie';
 import ModifyTshirt from '../modal/ModifyTshirt'; // Importa il modale per modificare la maglietta
 
 
+
 const Administrator = () => {
   const { currentUser } = useAuth(); // Recupera l'utente corrente
   const { paginationGraphic, fetchGraphics, loading, error } = useProducts();
@@ -107,6 +108,9 @@ const Administrator = () => {
     <>
       <div className="container mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
+          <Link to = "/sales" className="btn btn-success btn-sm">
+            <i className="bi bi-bar-chart me-2"></i> Gestione Vendite
+          </Link>
           <h2>Gestione Grafiche</h2>
           <div>
             <Link to="/Creategraphic" className="btn btn-secondary btn-sm me-2">

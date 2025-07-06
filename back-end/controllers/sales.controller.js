@@ -1,4 +1,4 @@
-import product from '../models/product.js';
+import product from '../models/Products.js';
 
 export async function getAllSales(request , response){
     try {
@@ -94,33 +94,31 @@ export async function createSale(req, res) {
 export async function updateSale(req, res) {
     try {
         const { saleId } = req.params;
-        const { name, description, price, category, type, color, size, graphic, discount } = req.body;
+        const { discount } = req.body;
 
-        const salesPrice = price - (price * (discount / 100));
+        // Recupera il prodotto
+        const prod = await product.findById(saleId);
+        if (!prod) return res.status(404).json({ error: "Product not found" });
 
-        if (salesPrice && (typeof salesPrice !== 'number' || salesPrice < 0)) {
-            return res.status(400).json({ error: "Invalid sale price" });
-        }
+        // Aggiorna solo il campo sconto e calcola il nuovo prezzo scontato
+        prod.discount = discount;
+        prod.salePrice = prod.price * (1 - discount / 100);
 
-        const types = ['T-shirt', 'Hoodie'];
-        if (!types.includes(type)) {
-            return res.status(400).json({ error: "Invalid type. Must be 't-shirt' or 'hoodie'" });
-        }
+        await prod.save();
 
+        res.status(200).json(prod);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+}
+
+export async function deleteSale(req, res) {
+    try {
+        const { saleId } = req.params;
+        // Aggiorna solo i campi di saldo
         const updatedSale = await product.findByIdAndUpdate(
             saleId,
-            {
-                name,
-                description,
-                price,
-                category,
-                type,
-                color,
-                size,
-                graphic,
-                discount,
-                salePrice: salesPrice || salesPrice, // Usa il prezzo scontato se fornito, altrimenti calcola
-            },
+            { discount: 0, salePrice: null },
             { new: true }
         );
 
@@ -128,24 +126,7 @@ export async function updateSale(req, res) {
             return res.status(404).json({ error: 'Sale not found' });
         }
 
-        res.status(200).json(updatedSale);
-    } catch (error) {
-        console.error("Error updating sale:", error);
-        res.status(500).json({ error: error.message });
-    }
-}
-
-export async function deleteSale(req, res) {
-    try {
-        const { saleId } = req.params;
-        const deletedSale = await product.findByIdAndDelete(saleId);
-
-        if (!deletedSale) {
-            return res.status(404).json({ error: 'Sale not found' });
-        }
-        
-
-        res.status(200).json({ message: 'Sale deleted successfully' });
+        res.status(200).json({ message: 'Saldo eliminato con successo', product: updatedSale });
     } catch (error) {
         console.error("Error deleting sale:", error);
         res.status(500).json({ error: error.message });

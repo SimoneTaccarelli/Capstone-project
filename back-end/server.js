@@ -10,6 +10,7 @@ import stripeRouter from './routes/stripe.js';
 import orderRouter from './routes/order.js';
 import graphicRouter from './routes/graphic.js';
 import cartRouter from './routes/cart.js';
+import salesRouter from './routes/sales.js';
 
 
 
@@ -34,6 +35,7 @@ server.use('/api/v1/stripe' , stripeRouter)
 server.use('/api/v1/order' , orderRouter)
 server.use('/api/v1' , graphicRouter)
 server.use('/api/v1/cart' , cartRouter)
+server.use('/api/v1' , salesRouter)
 
 
 

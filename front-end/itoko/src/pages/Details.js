@@ -270,7 +270,19 @@ const Details = () => {
           
           <p className="lead mb-4">{currentProduct.description}</p>
           
-          <h3 className="mb-4 text-primary">€{currentProduct.price?.toFixed(2) || '0.00'}</h3>
+          {currentProduct.discount > 0 ? (
+            <>
+              <h3 className="mb-2 text-muted" style={{ textDecoration: "line-through", display: "inline-block", marginRight: "10px" }}>
+                €{currentProduct.price?.toFixed(2) || '0.00'}
+              </h3>
+              <h3 className="mb-2 text-primary d-inline-block" style={{ marginLeft: "10px" }}>
+                €{currentProduct.salePrice?.toFixed(2) || (currentProduct.price * (1 - currentProduct.discount / 100)).toFixed(2)}
+                <span className="ms-2 text-success fs-5">(-{currentProduct.discount}%)</span>
+              </h3>
+            </>
+          ) : (
+            <h3 className="mb-4 text-primary">€{currentProduct.price?.toFixed(2) || '0.00'}</h3>
+          )}
           
           {/* Colori disponibili */}
           {currentProduct.color && currentProduct.color.length > 0 && (

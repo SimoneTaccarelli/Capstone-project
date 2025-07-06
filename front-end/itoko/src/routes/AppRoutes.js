@@ -17,6 +17,7 @@ import CreateGraphic from "../pages/CreateGraphic";
 // import Order from "../pages/Order";
 import useAdminCheck from "../hooks/useAdminCheck";
 import { useState } from "react";
+import Sales from "../pages/Sales";
 
 const AppRoutes = () => {
     const { userData, loading, admin } = useAuth();
@@ -59,6 +60,7 @@ const AppRoutes = () => {
                 <Route path="/Administrator" element={isAdmin ? <Administrator /> : <Navigate to="/" />} />
                 <Route path="/CreateProduct" element={isAdmin ? <CreateProduct /> : <Navigate to="/" />} />
                 <Route path="/CreateGraphic" element={isAdmin ? <CreateGraphic /> : <Navigate to="/" />} />
+                <Route path="/sales" element={isAdmin ? <Sales /> : <Navigate to="/" />} />
                 {/* Aggiungi queste route per gestire eventuali variazioni del percorso */}
                 {/* <Route path="/orderadmin" element={<Navigate to="/order-admin" replace />} />
                 <Route path="/OrderAdmin" element={<Navigate to="/order-admin" replace />} /> */}
